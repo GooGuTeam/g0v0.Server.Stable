@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings": {
+    "orderingRules": {
+      "usingDirectivesPlacement": "outsideNamespace",
+      "systemUsingDirectivesFirst": true,
+      "blankLinesBetweenUsingGroups": "omit"
+    },
+    "documentationRules": {
+      "companyName": "GooGuTeam",
+      "copyrightText": "Copyright (c) {companyName}. License under MIT License. See LICENSE in the project root for license information.",
+      "xmlHeader": false,
+      "fileNamingConvention": "metadata",
+      "documentExposedElements": true,
+      "documentInternalElements": false,
+      "documentInterfaces": true
+    },
+    "namingRules": {
+      "allowCommonHungarianPrefixes": true,
+      "allowedHungarianPrefixes": []
+    },
+    "layoutRules": {
+      "newlineAtEndOfFile": "allow"
+    },
+    "maintainabilityRules": {
+      "topLevelTypes": [
+        "class",
+        "interface",
+        "struct",
+        "enum",
+        "delegate"
+      ]
+    }
+  }
+}
+

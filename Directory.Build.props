@@ -1,0 +1,55 @@
+<Project>
+
+    <PropertyGroup>
+        <!-- Enforce code style rules during build -->
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+        <!-- Enable .NET analyzers -->
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+
+        <!-- Pinned to the .NET 9 rule set. The .NET 10 SDK's `10.0-recommended` set adds CA1873 (logging argument
+             evaluation), which fires on every `logger.LogX(..., expensiveArgument)` call site in this codebase.
+             Raise this back to `latest-recommended` once those call sites guard their arguments. -->
+        <AnalysisLevel>9.0-recommended</AnalysisLevel>
+
+        <!-- Treat analyzer warnings as errors in CI (controlled by CI env variable) -->
+        <CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors>
+
+        <!-- Generate documentation XML -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- StyleCop.Analyzers for consistent code style -->
+        <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+
+        <!-- Meziantou.Analyzer for additional .NET best practices -->
+        <PackageReference Include="Meziantou.Analyzer" Version="2.0.187">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+
+        <!-- Roslynator for code analysis and refactoring -->
+        <PackageReference Include="Roslynator.Analyzers" Version="4.12.11">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- AutoMapper 13.0.1 reaches us transitively via g0v0.osu.Game / ppy.osu.Game, which still pin that version
+             at their latest release, and AutoMapper 15+ is commercially licensed so it cannot simply be force-upgraded.
+             Suppress only this one advisory (CVE-2026-32933 / GHSA-rvv3-g6hj-g44x, DoS via uncontrolled recursion);
+             every other transitive package stays audited. -->
+        <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rvv3-g6hj-g44x"/>
+    </ItemGroup>
+
+</Project>
+

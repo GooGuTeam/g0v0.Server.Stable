@@ -1,0 +1,9 @@
+bin/
+obj/
+artifacts/
+_ReSharper.Caches/
+.idea/
+*.user
+/geoip/
+/g0v0.Server.Stable/config/
+/g0v0.Server.Stable/storage/

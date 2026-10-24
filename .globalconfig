@@ -1,0 +1,75 @@
+# Global analyzer configuration
+# https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/configuration-files
+is_global = true
+# SA1101: Prefix local calls with this
+dotnet_diagnostic.SA1101.severity = none
+# SA1124: Do not use regions (project uses regions for organization)
+dotnet_diagnostic.SA1124.severity = none
+# SA1200: Using directives placement
+dotnet_diagnostic.SA1200.severity = none
+# SA1300: Element should begin with uppercase letter (project name is g0v0)
+dotnet_diagnostic.SA1300.severity = none
+# SA1309: Field names should not begin with underscore
+dotnet_diagnostic.SA1309.severity = none
+# SA1413: Use trailing comma
+dotnet_diagnostic.SA1413.severity = none
+# SA1600: Elements should be documented
+dotnet_diagnostic.SA1600.severity = warning
+# SA1601: Partial elements should be documented
+dotnet_diagnostic.SA1601.severity = none
+# SA1602: Enumeration items should be documented
+dotnet_diagnostic.SA1602.severity = warning
+# SA1633-SA1640: File header (handled by .editorconfig)
+dotnet_diagnostic.SA1633.severity = none
+dotnet_diagnostic.SA1634.severity = none
+dotnet_diagnostic.SA1635.severity = none
+dotnet_diagnostic.SA1636.severity = none
+dotnet_diagnostic.SA1637.severity = none
+dotnet_diagnostic.SA1638.severity = none
+dotnet_diagnostic.SA1639.severity = none
+dotnet_diagnostic.SA1640.severity = none
+# SA1516: Elements should be separated by blank line
+dotnet_diagnostic.SA1516.severity = suggestion
+
+# SA1649: File name should match first type name (false positive for generics like ConfigurationManager<T>)
+dotnet_diagnostic.SA1649.severity = none
+# Meziantou.Analyzer
+dotnet_diagnostic.MA0004.severity = suggestion
+dotnet_diagnostic.MA0006.severity = warning
+dotnet_diagnostic.MA0011.severity = suggestion
+dotnet_diagnostic.MA0026.severity = suggestion
+dotnet_diagnostic.MA0048.severity = warning
+dotnet_diagnostic.MA0051.severity = suggestion
+dotnet_diagnostic.MA0003.severity = warning
+dotnet_diagnostic.MA0020.severity = warning
+# Roslynator
+dotnet_diagnostic.RCS1036.severity = suggestion
+dotnet_diagnostic.RCS1037.severity = warning
+dotnet_diagnostic.RCS1090.severity = suggestion
+# .NET Built-in Analyzers
+dotnet_diagnostic.CA1062.severity = suggestion
+dotnet_diagnostic.CA1303.severity = none
+dotnet_diagnostic.CA1304.severity = suggestion
+dotnet_diagnostic.CA1305.severity = suggestion
+dotnet_diagnostic.CA1307.severity = suggestion
+dotnet_diagnostic.CA1310.severity = warning
+dotnet_diagnostic.CA1707.severity = suggestion
+dotnet_diagnostic.CA1812.severity = suggestion
+dotnet_diagnostic.CA1822.severity = suggestion
+dotnet_diagnostic.CA1848.severity = suggestion
+dotnet_diagnostic.CA2007.severity = suggestion
+# IDE rules
+dotnet_diagnostic.IDE0005.severity = warning
+dotnet_diagnostic.IDE0055.severity = warning
+dotnet_diagnostic.IDE0160.severity = none
+dotnet_diagnostic.IDE0161.severity = warning
+dotnet_diagnostic.IDE0032.severity = warning
+dotnet_diagnostic.IDE0045.severity = warning
+dotnet_diagnostic.IDE0057.severity = warning
+dotnet_diagnostic.IDE0066.severity = warning
+dotnet_diagnostic.IDE0270.severity = warning
+dotnet_diagnostic.IDE0300.severity = warning
+dotnet_diagnostic.IDE0301.severity = warning
+
+# temporary workaround for https://youtrack.jetbrains.com/issue/RIDER-130381/Rider-does-not-respect-propagated-NoWarn-CS1591?backToIssues=false
+dotnet_diagnostic.CS1591.severity = none

@@ -1,0 +1,9 @@
+{
+  "plaintext": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:peppy :0e3bfa8384e931d7f32d6fcfe2865c01:83:14:5:23:6:6:26810:52:False:C:136:True:0:240101120000:20240102",
+  "encrypted": "YMyyxxJt0EehnTAHoLX8wpQ6mArZwtEIuOpVojjngsOyc9SCCrtuR3S9F3gts8rzFEoil4+qIWIcY30MzbWwvrOcptkHMQJ1nToKwl/mm7B+wvLpYZefnoWkod25tcr/zSehg3vQBAnu+CiQ1TDIjB39hqaI3mP+MfaSwY+dVLQqsIooR4YdCte8iMcocl8S+lPFZveYvtiJj27iw3T0OA==",
+  "encryptedClientHash": "gX6O1DEQ8FhZmur84ykI204iERxA5y22MQBpsrInT08=",
+  "iv": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+  "version": "20240102",
+  "clientHash": "osu-client-hash",
+  "storyboardHash": "storyboard"
+}

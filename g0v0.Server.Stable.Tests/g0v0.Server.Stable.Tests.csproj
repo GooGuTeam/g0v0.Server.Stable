@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>SA0001;SA1600;SA1602;CS1591;CS0618;MA0048</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.12"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0"/>
+        <PackageReference Include="Moq" Version="4.20.72"/>
+        <PackageReference Include="NUnit" Version="4.6.1"/>
+        <PackageReference Include="NUnit3TestAdapter" Version="4.6.0"/>
+        <PackageReference Include="NUnit.Analyzers" Version="4.3.0"/>
+        <PackageReference Include="coverlet.collector" Version="6.0.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="NUnit.Framework"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Fixtures/bancho-packets.json"/>
+        <EmbeddedResource Include="Fixtures/bancho-score.json"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\g0v0.Server.Stable\g0v0.Server.Stable.csproj"/>
+    </ItemGroup>
+
+</Project>

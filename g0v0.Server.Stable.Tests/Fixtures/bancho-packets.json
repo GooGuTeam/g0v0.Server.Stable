@@ -1,0 +1,3287 @@
+{
+  "Source": "bancho.py/tests/unit/packets_test.py",
+  "SourceSha256": "6c1486e2d369d44328fe750fd4bf9a56f67ae4664e9888375f3922f1c1d71384",
+  "PacketSourceSha256": "7bd7bb190bfb3d31ff98d36c55772fc3c359ac6a403a59f8760188fb705a4599",
+  "OriginalCases": 92,
+  "Cases": [
+    {
+      "Name": "test_write_user_id[0]",
+      "Type": "PacketUserId",
+      "Packet": {
+        "UserId": 0
+      },
+      "Hex": "0500000400000000000000"
+    },
+    {
+      "Name": "test_write_user_id[1]",
+      "Type": "PacketUserId",
+      "Packet": {
+        "UserId": 2147483647
+      },
+      "Hex": "05000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_send_message[0]",
+      "Type": "PacketSendMessage",
+      "Packet": {
+        "Message": {
+          "Sender": "cmyui",
+          "Text": "woah woah crazy!!",
+          "Recipient": "jacobian",
+          "SenderId": 32
+        }
+      },
+      "Hex": "070000280000000b05636d7975690b11776f616820776f6168206372617a7921210b086a61636f6269616e20000000"
+    },
+    {
+      "Name": "test_write_send_message[1]",
+      "Type": "PacketSendMessage",
+      "Packet": {
+        "Message": {
+          "Sender": "",
+          "Text": "",
+          "Recipient": "",
+          "SenderId": 0
+        }
+      },
+      "Hex": "0700000700000000000000000000"
+    },
+    {
+      "Name": "test_write_pong[0]",
+      "Type": "PacketPong",
+      "Packet": {},
+      "Hex": "08000000000000"
+    },
+    {
+      "Name": "test_write_change_username[0]",
+      "Type": "PacketHandleIrcChangeUsername",
+      "Packet": {
+        "UsernameChange": "cmyui>>>>abcgamer321"
+      },
+      "Hex": "090000160000000b14636d7975693e3e3e3e61626367616d6572333231"
+    },
+    {
+      "Name": "test_write_change_username[1]",
+      "Type": "PacketHandleIrcChangeUsername",
+      "Packet": {
+        "UsernameChange": ">>>>"
+      },
+      "Hex": "090000060000000b043e3e3e3e"
+    },
+    {
+      "Name": "test_write_user_stats[0]",
+      "Type": "PacketUserStats",
+      "Packet": {
+        "UserId": 1001,
+        "Action": 2,
+        "InfoText": "gaming",
+        "MapHash": "60b725f10c9c85c70d97880dfe8191b3",
+        "Mods": 64,
+        "Mode": 0,
+        "MapId": 1723723,
+        "RankedScore": 1238917112,
+        "Accuracy": 0.9231999999999999,
+        "PlayCount": 3821,
+        "TotalScore": 3812428392,
+        "Rank": 42,
+        "Pp": 8291
+      },
+      "Hex": "0b000056000000e9030000020b0667616d696e670b20363062373235663130633963383563373064393738383064666538313931623340000000004b4d1a00f85fd84900000000d6566c3fed0e0000680a3de3000000002a0000006320"
+    },
+    {
+      "Name": "test_write_user_stats[1]",
+      "Type": "PacketUserStats",
+      "Packet": {
+        "UserId": 0,
+        "Action": 0,
+        "InfoText": "",
+        "MapHash": "",
+        "Mods": 0,
+        "Mode": 0,
+        "MapId": 0,
+        "RankedScore": 0,
+        "Accuracy": 0.0,
+        "PlayCount": 0,
+        "TotalScore": 0,
+        "Rank": 0,
+        "Pp": 0
+      },
+      "Hex": "0b00002e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "Name": "test_write_logout[0]",
+      "Type": "PacketUserLogout",
+      "Packet": {
+        "UserId": 0
+      },
+      "Hex": "0c0000050000000000000000"
+    },
+    {
+      "Name": "test_write_logout[1]",
+      "Type": "PacketUserLogout",
+      "Packet": {
+        "UserId": 2147483647
+      },
+      "Hex": "0c000005000000ffffff7f00"
+    },
+    {
+      "Name": "test_write_spectator_joined[0]",
+      "Type": "PacketSpectatorJoined",
+      "Packet": {
+        "UserId": 0
+      },
+      "Hex": "0d00000400000000000000"
+    },
+    {
+      "Name": "test_write_spectator_joined[1]",
+      "Type": "PacketSpectatorJoined",
+      "Packet": {
+        "UserId": 2147483647
+      },
+      "Hex": "0d000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_spectator_left[0]",
+      "Type": "PacketSpectatorLeft",
+      "Packet": {
+        "UserId": 0
+      },
+      "Hex": "0e00000400000000000000"
+    },
+    {
+      "Name": "test_write_spectator_left[1]",
+      "Type": "PacketSpectatorLeft",
+      "Packet": {
+        "UserId": 2147483647
+      },
+      "Hex": "0e000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_spectate_frames[0]",
+      "Type": "PacketSpectateFrames",
+      "Packet": {
+        "Data": "AwABcmF3LXNwZWN0YXRvci1mcmFtZS1kYXRh"
+      },
+      "Hex": "0f00001b0000000300017261772d737065637461746f722d6672616d652d64617461"
+    },
+    {
+      "Name": "test_write_version_update[0]",
+      "Type": "PacketVersionUpdate",
+      "Packet": {},
+      "Hex": "13000000000000"
+    },
+    {
+      "Name": "test_write_spectator_cant_spectate[0]",
+      "Type": "PacketSpectatorCantSpectate",
+      "Packet": {
+        "UserId": 0
+      },
+      "Hex": "1600000400000000000000"
+    },
+    {
+      "Name": "test_write_spectator_cant_spectate[1]",
+      "Type": "PacketSpectatorCantSpectate",
+      "Packet": {
+        "UserId": 2147483647
+      },
+      "Hex": "16000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_get_attention[0]",
+      "Type": "PacketGetAttention",
+      "Packet": {},
+      "Hex": "17000000000000"
+    },
+    {
+      "Name": "test_write_notification[0]",
+      "Type": "PacketNotification",
+      "Packet": {
+        "Message": "waowww"
+      },
+      "Hex": "180000080000000b0677616f777777"
+    },
+    {
+      "Name": "test_write_notification[1]",
+      "Type": "PacketNotification",
+      "Packet": {
+        "Message": ""
+      },
+      "Hex": "1800000100000000"
+    },
+    {
+      "Name": "test_write_update_match[0]",
+      "Type": "PacketUpdateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1a0000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_update_match[1]",
+      "Type": "PacketUpdateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1a0000d500000007000100400000000b0570617274790b000b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_match_payload[0]",
+      "Type": "PacketNewMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1b0000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_new_match[0]",
+      "Type": "PacketNewMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1b0000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_dispose_match[0]",
+      "Type": "PacketDisposeMatch",
+      "Packet": {
+        "Id": 0
+      },
+      "Hex": "1c00000400000000000000"
+    },
+    {
+      "Name": "test_write_dispose_match[1]",
+      "Type": "PacketDisposeMatch",
+      "Packet": {
+        "Id": 2147483647
+      },
+      "Hex": "1c000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_toggle_block_non_friend_pm[0]",
+      "Type": "PacketToggleBlockNonFriendDms",
+      "Packet": {},
+      "Hex": "22000000000000"
+    },
+    {
+      "Name": "test_write_match_join_success[0]",
+      "Type": "PacketMatchJoinSuccess",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "240000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_match_join_fail[0]",
+      "Type": "PacketMatchJoinFail",
+      "Packet": {},
+      "Hex": "25000000000000"
+    },
+    {
+      "Name": "test_write_fellow_spectator_joined[0]",
+      "Type": "PacketFellowSpectatorJoined",
+      "Packet": {
+        "UserId": 0
+      },
+      "Hex": "2a00000400000000000000"
+    },
+    {
+      "Name": "test_write_fellow_spectator_joined[1]",
+      "Type": "PacketFellowSpectatorJoined",
+      "Packet": {
+        "UserId": 2147483647
+      },
+      "Hex": "2a000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_fellow_spectator_left[0]",
+      "Type": "PacketFellowSpectatorLeft",
+      "Packet": {
+        "UserId": 0
+      },
+      "Hex": "2b00000400000000000000"
+    },
+    {
+      "Name": "test_write_fellow_spectator_left[1]",
+      "Type": "PacketFellowSpectatorLeft",
+      "Packet": {
+        "UserId": 2147483647
+      },
+      "Hex": "2b000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_match_start[0]",
+      "Type": "PacketMatchStart",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "2e0000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_match_score_update[0]",
+      "Type": "PacketMatchScoreUpdate",
+      "Packet": {
+        "Frame": {
+          "Time": 38242,
+          "Id": 28,
+          "Num300": 320,
+          "Num100": 48,
+          "Num50": 2,
+          "NumGeki": 32,
+          "NumKatu": 8,
+          "NumMiss": 3,
+          "TotalScore": 492392,
+          "MaxCombo": 122,
+          "CurrentCombo": 39,
+          "Perfect": false,
+          "CurrentHp": 245,
+          "TagByte": 0,
+          "ScoreV2": false,
+          "ComboPortion": null,
+          "BonusPortion": null
+        }
+      },
+      "Hex": "3000001d000000629500001c400130000200200008000300688307007a00270000f50000"
+    },
+    {
+      "Name": "test_write_match_score_update[1]",
+      "Type": "PacketMatchScoreUpdate",
+      "Packet": {
+        "Frame": {
+          "Time": 0,
+          "Id": 0,
+          "Num300": 0,
+          "Num100": 0,
+          "Num50": 0,
+          "NumGeki": 0,
+          "NumKatu": 0,
+          "NumMiss": 0,
+          "TotalScore": 0,
+          "MaxCombo": 0,
+          "CurrentCombo": 0,
+          "Perfect": false,
+          "CurrentHp": 0,
+          "TagByte": 0,
+          "ScoreV2": false,
+          "ComboPortion": 0.0,
+          "BonusPortion": 0.0
+        }
+      },
+      "Hex": "3000001d0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "Name": "test_write_match_transfer_host[0]",
+      "Type": "PacketMatchTransferHost",
+      "Packet": {},
+      "Hex": "32000000000000"
+    },
+    {
+      "Name": "test_write_match_all_players_loaded[0]",
+      "Type": "PacketMatchAllPlayersLoaded",
+      "Packet": {},
+      "Hex": "35000000000000"
+    },
+    {
+      "Name": "test_write_match_player_failed[0]",
+      "Type": "PacketMatchPlayerFailed",
+      "Packet": {
+        "SlotId": 0
+      },
+      "Hex": "3900000400000000000000"
+    },
+    {
+      "Name": "test_write_match_player_failed[1]",
+      "Type": "PacketMatchPlayerFailed",
+      "Packet": {
+        "SlotId": 2147483647
+      },
+      "Hex": "39000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_match_complete[0]",
+      "Type": "PacketMatchComplete",
+      "Packet": {},
+      "Hex": "3a000000000000"
+    },
+    {
+      "Name": "test_write_match_skip[0]",
+      "Type": "PacketMatchSkip",
+      "Packet": {},
+      "Hex": "3d000000000000"
+    },
+    {
+      "Name": "test_write_channel_join[0]",
+      "Type": "PacketChannelJoinSuccess",
+      "Packet": {
+        "Name": "#osu"
+      },
+      "Hex": "400000060000000b04236f7375"
+    },
+    {
+      "Name": "test_write_channel_join[1]",
+      "Type": "PacketChannelJoinSuccess",
+      "Packet": {
+        "Name": ""
+      },
+      "Hex": "4000000100000000"
+    },
+    {
+      "Name": "test_write_channel_info[0]",
+      "Type": "PacketChannelInfo",
+      "Packet": {
+        "Channel": {
+          "Name": "#osu",
+          "Topic": "le topique",
+          "PlayerCount": 123
+        }
+      },
+      "Hex": "410000140000000b04236f73750b0a6c6520746f70697175657b00"
+    },
+    {
+      "Name": "test_write_channel_info[1]",
+      "Type": "PacketChannelInfo",
+      "Packet": {
+        "Channel": {
+          "Name": "",
+          "Topic": "",
+          "PlayerCount": 0
+        }
+      },
+      "Hex": "4100000400000000000000"
+    },
+    {
+      "Name": "test_write_channel_kick[0]",
+      "Type": "PacketChannelKick",
+      "Packet": {
+        "Name": "#osu"
+      },
+      "Hex": "420000060000000b04236f7375"
+    },
+    {
+      "Name": "test_write_channel_kick[1]",
+      "Type": "PacketChannelKick",
+      "Packet": {
+        "Name": ""
+      },
+      "Hex": "4200000100000000"
+    },
+    {
+      "Name": "test_write_channel_auto_join[0]",
+      "Type": "PacketChannelAutoJoin",
+      "Packet": {
+        "Channel": {
+          "Name": "#osu",
+          "Topic": "le topique",
+          "PlayerCount": 123
+        }
+      },
+      "Hex": "430000140000000b04236f73750b0a6c6520746f70697175657b00"
+    },
+    {
+      "Name": "test_write_channel_auto_join[1]",
+      "Type": "PacketChannelAutoJoin",
+      "Packet": {
+        "Channel": {
+          "Name": "",
+          "Topic": "",
+          "PlayerCount": 0
+        }
+      },
+      "Hex": "4300000400000000000000"
+    },
+    {
+      "Name": "test_write_bancho_privileges[0]",
+      "Type": "PacketPrivileges",
+      "Packet": {
+        "Privileges": 0
+      },
+      "Hex": "4700000400000000000000"
+    },
+    {
+      "Name": "test_write_bancho_privileges[1]",
+      "Type": "PacketPrivileges",
+      "Packet": {
+        "Privileges": 2147483647
+      },
+      "Hex": "47000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_friends_list[0]",
+      "Type": "PacketFriendsList",
+      "Packet": {
+        "Friends": [
+          1,
+          4,
+          1001
+        ]
+      },
+      "Hex": "4800000e00000003000100000004000000e9030000"
+    },
+    {
+      "Name": "test_write_friends_list[1]",
+      "Type": "PacketFriendsList",
+      "Packet": {
+        "Friends": []
+      },
+      "Hex": "480000020000000000"
+    },
+    {
+      "Name": "test_write_protocol_version[0]",
+      "Type": "PacketProtocolVersion",
+      "Packet": {
+        "Version": 0
+      },
+      "Hex": "4b00000400000000000000"
+    },
+    {
+      "Name": "test_write_protocol_version[1]",
+      "Type": "PacketProtocolVersion",
+      "Packet": {
+        "Version": 2147483647
+      },
+      "Hex": "4b000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_main_menu_icon[0]",
+      "Type": "PacketMainMenuIcon",
+      "Packet": {
+        "Icon": "https://icon-url.ca/a.png|https://onclick-url.ca/a.png"
+      },
+      "Hex": "4c0000380000000b3668747470733a2f2f69636f6e2d75726c2e63612f612e706e677c68747470733a2f2f6f6e636c69636b2d75726c2e63612f612e706e67"
+    },
+    {
+      "Name": "test_write_main_menu_icon[1]",
+      "Type": "PacketMainMenuIcon",
+      "Packet": {
+        "Icon": "|"
+      },
+      "Hex": "4c0000030000000b017c"
+    },
+    {
+      "Name": "test_write_monitor[0]",
+      "Type": "PacketMonitor",
+      "Packet": {},
+      "Hex": "50000000000000"
+    },
+    {
+      "Name": "test_write_match_player_skipped[0]",
+      "Type": "PacketMatchPlayerSkipped",
+      "Packet": {
+        "UserId": 0
+      },
+      "Hex": "5100000400000000000000"
+    },
+    {
+      "Name": "test_write_match_player_skipped[1]",
+      "Type": "PacketMatchPlayerSkipped",
+      "Packet": {
+        "UserId": 2147483647
+      },
+      "Hex": "51000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_user_presence[0]",
+      "Type": "PacketUserPresence",
+      "Packet": {
+        "UserId": 1001,
+        "Name": "cmyui",
+        "UtcOffsetPlus24": 19,
+        "CountryCode": 38,
+        "PackedPrivilegesMode": 31,
+        "Longitude": 43.768,
+        "Latitude": -79.522,
+        "Rank": 42
+      },
+      "Hex": "5300001a000000e90300000b05636d79756913261f6f122f42440b9fc22a000000"
+    },
+    {
+      "Name": "test_write_user_presence[1]",
+      "Type": "PacketUserPresence",
+      "Packet": {
+        "UserId": 0,
+        "Name": "",
+        "UtcOffsetPlus24": 24,
+        "CountryCode": 0,
+        "PackedPrivilegesMode": 0,
+        "Longitude": 0.0,
+        "Latitude": 0.0,
+        "Rank": 0
+      },
+      "Hex": "530000140000000000000000180000000000000000000000000000"
+    },
+    {
+      "Name": "test_write_restart_server[0]",
+      "Type": "PacketRestart",
+      "Packet": {
+        "Milliseconds": 0
+      },
+      "Hex": "5600000400000000000000"
+    },
+    {
+      "Name": "test_write_restart_server[1]",
+      "Type": "PacketRestart",
+      "Packet": {
+        "Milliseconds": 2147483647
+      },
+      "Hex": "56000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_match_invite[0]",
+      "Type": "PacketMatchInvite",
+      "Packet": {
+        "Message": {
+          "Sender": "cmyui",
+          "Text": "Come join my game: [osump://7/secret party].",
+          "Recipient": "cover",
+          "SenderId": 1001
+        }
+      },
+      "Hex": "580000400000000b05636d7975690b2c436f6d65206a6f696e206d792067616d653a205b6f73756d703a2f2f372f7365637265742070617274795d2e0b05636f766572e9030000"
+    },
+    {
+      "Name": "test_channel_info_end[0]",
+      "Type": "PacketChannelInfoEnd",
+      "Packet": {},
+      "Hex": "59000000000000"
+    },
+    {
+      "Name": "test_write_match_change_password[0]",
+      "Type": "PacketMatchChangePassword",
+      "Packet": {
+        "NewPassword": "newpassword"
+      },
+      "Hex": "5b00000d0000000b0b6e657770617373776f7264"
+    },
+    {
+      "Name": "test_write_match_change_password[1]",
+      "Type": "PacketMatchChangePassword",
+      "Packet": {
+        "NewPassword": ""
+      },
+      "Hex": "5b00000100000000"
+    },
+    {
+      "Name": "test_write_silence_end[0]",
+      "Type": "PacketSilenceEnd",
+      "Packet": {
+        "SecondsRemaining": 0
+      },
+      "Hex": "5c00000400000000000000"
+    },
+    {
+      "Name": "test_write_silence_end[1]",
+      "Type": "PacketSilenceEnd",
+      "Packet": {
+        "SecondsRemaining": 2147483647
+      },
+      "Hex": "5c000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_user_silenced[0]",
+      "Type": "PacketUserSilenced",
+      "Packet": {
+        "UserId": 0
+      },
+      "Hex": "5e00000400000000000000"
+    },
+    {
+      "Name": "test_write_user_silenced[1]",
+      "Type": "PacketUserSilenced",
+      "Packet": {
+        "UserId": 2147483647
+      },
+      "Hex": "5e000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_user_presence_single[0]",
+      "Type": "PacketUserPresenceSingle",
+      "Packet": {
+        "UserId": 0
+      },
+      "Hex": "5f00000400000000000000"
+    },
+    {
+      "Name": "test_write_user_presence_single[1]",
+      "Type": "PacketUserPresenceSingle",
+      "Packet": {
+        "UserId": 2147483647
+      },
+      "Hex": "5f000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_user_presence_bundle[0]",
+      "Type": "PacketUserPresenceBundle",
+      "Packet": {
+        "UserIds": [
+          1,
+          4,
+          1001
+        ]
+      },
+      "Hex": "6000000e00000003000100000004000000e9030000"
+    },
+    {
+      "Name": "test_write_user_presence_bundle[1]",
+      "Type": "PacketUserPresenceBundle",
+      "Packet": {
+        "UserIds": []
+      },
+      "Hex": "600000020000000000"
+    },
+    {
+      "Name": "test_write_user_dm_blocked[0]",
+      "Type": "PacketUserDmBlocked",
+      "Packet": {
+        "Message": {
+          "Sender": "",
+          "Text": "",
+          "Recipient": "cover",
+          "SenderId": 0
+        }
+      },
+      "Hex": "6400000d00000000000b05636f76657200000000"
+    },
+    {
+      "Name": "test_write_user_dm_blocked[1]",
+      "Type": "PacketUserDmBlocked",
+      "Packet": {
+        "Message": {
+          "Sender": "",
+          "Text": "",
+          "Recipient": "",
+          "SenderId": 0
+        }
+      },
+      "Hex": "6400000700000000000000000000"
+    },
+    {
+      "Name": "test_write_target_silenced[0]",
+      "Type": "PacketTargetIsSilenced",
+      "Packet": {
+        "Message": {
+          "Sender": "",
+          "Text": "",
+          "Recipient": "cover",
+          "SenderId": 0
+        }
+      },
+      "Hex": "6500000d00000000000b05636f76657200000000"
+    },
+    {
+      "Name": "test_write_target_silenced[1]",
+      "Type": "PacketTargetIsSilenced",
+      "Packet": {
+        "Message": {
+          "Sender": "",
+          "Text": "",
+          "Recipient": "",
+          "SenderId": 0
+        }
+      },
+      "Hex": "6500000700000000000000000000"
+    },
+    {
+      "Name": "test_write_version_update_forced[0]",
+      "Type": "PacketVersionUpdateForced",
+      "Packet": {},
+      "Hex": "66000000000000"
+    },
+    {
+      "Name": "test_write_switch_server[0]",
+      "Type": "PacketSwitchServer",
+      "Packet": {
+        "Threshold": 0
+      },
+      "Hex": "6700000400000000000000"
+    },
+    {
+      "Name": "test_write_switch_server[1]",
+      "Type": "PacketSwitchServer",
+      "Packet": {
+        "Threshold": 2147483647
+      },
+      "Hex": "67000004000000ffffff7f"
+    },
+    {
+      "Name": "test_write_account_restricted[0]",
+      "Type": "PacketAccountRestricted",
+      "Packet": {},
+      "Hex": "68000000000000"
+    },
+    {
+      "Name": "test_write_rtx[0]",
+      "Type": "PacketRtx",
+      "Packet": {
+        "Message": "yoyoo rip rtx"
+      },
+      "Hex": "6900000f0000000b0d796f796f6f2072697020727478"
+    },
+    {
+      "Name": "test_write_rtx[1]",
+      "Type": "PacketRtx",
+      "Packet": {
+        "Message": ""
+      },
+      "Hex": "6900000100000000"
+    },
+    {
+      "Name": "test_write_match_abort[0]",
+      "Type": "PacketMatchAbort",
+      "Packet": {},
+      "Hex": "6a000000000000"
+    },
+    {
+      "Name": "test_write_switch_tournament_server[0]",
+      "Type": "PacketSwitchTournamentServer",
+      "Packet": {
+        "Ip": "61.91.139.24"
+      },
+      "Hex": "6b00000e0000000b0c36312e39312e3133392e3234"
+    },
+    {
+      "Name": "test_write_switch_tournament_server[1]",
+      "Type": "PacketSwitchTournamentServer",
+      "Packet": {
+        "Ip": ""
+      },
+      "Hex": "6b00000100000000"
+    }
+  ],
+  "SupplementalCases": [
+    {
+      "Name": "match.freemods=False.password=None",
+      "Type": "PacketNewMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": null,
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": false,
+          "SlotMods": null,
+          "Seed": 123456
+        }
+      },
+      "Hex": "1b00009400000007000100400000000b057061727479000b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e903000020000000200000000002020040e20100"
+    },
+    {
+      "Name": "match.freemods=False.password=''",
+      "Type": "PacketNewMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": false,
+          "SlotMods": null,
+          "Seed": 123456
+        }
+      },
+      "Hex": "1b00009500000007000100400000000b0570617274790b000b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e903000020000000200000000002020040e20100"
+    },
+    {
+      "Name": "match.freemods=False.password='secret'",
+      "Type": "PacketNewMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": false,
+          "SlotMods": null,
+          "Seed": 123456
+        }
+      },
+      "Hex": "1b00009b00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e903000020000000200000000002020040e20100"
+    },
+    {
+      "Name": "match.freemods=True.password=None",
+      "Type": "PacketNewMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": null,
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1b0000d400000007000100400000000b057061727479000b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "match.freemods=True.password=''",
+      "Type": "PacketNewMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1b0000d500000007000100400000000b0570617274790b000b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "match.freemods=True.password='secret'",
+      "Type": "PacketNewMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1b0000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "scoreframe.scorev2=False",
+      "Type": "PacketMatchScoreUpdate",
+      "Packet": {
+        "Frame": {
+          "Time": 38242,
+          "Id": 28,
+          "Num300": 320,
+          "Num100": 48,
+          "Num50": 2,
+          "NumGeki": 32,
+          "NumKatu": 8,
+          "NumMiss": 3,
+          "TotalScore": 492392,
+          "MaxCombo": 122,
+          "CurrentCombo": 39,
+          "Perfect": false,
+          "CurrentHp": 245,
+          "TagByte": 0,
+          "ScoreV2": false,
+          "ComboPortion": null,
+          "BonusPortion": null
+        }
+      },
+      "Hex": "3000001d000000629500001c400130000200200008000300688307007a00270000f50000"
+    },
+    {
+      "Name": "scoreframe.scorev2=True",
+      "Type": "PacketMatchScoreUpdate",
+      "Packet": {
+        "Frame": {
+          "Time": 38242,
+          "Id": 28,
+          "Num300": 320,
+          "Num100": 48,
+          "Num50": 2,
+          "NumGeki": 32,
+          "NumKatu": 8,
+          "NumMiss": 3,
+          "TotalScore": 492392,
+          "MaxCombo": 122,
+          "CurrentCombo": 39,
+          "Perfect": false,
+          "CurrentHp": 245,
+          "TagByte": 0,
+          "ScoreV2": true,
+          "ComboPortion": 0.5,
+          "BonusPortion": 0.25
+        }
+      },
+      "Hex": "3000002d000000629500001c400130000200200008000300688307007a00270000f50001000000000000e03f000000000000d03f"
+    }
+  ],
+  "ReaderCases": [
+    {
+      "Name": "test_write_send_message[0]",
+      "Type": "PacketSendPublicMessage",
+      "Packet": {
+        "Message": {
+          "Sender": "cmyui",
+          "Text": "woah woah crazy!!",
+          "Recipient": "jacobian",
+          "SenderId": 32
+        }
+      },
+      "Hex": "010000280000000b05636d7975690b11776f616820776f6168206372617a7921210b086a61636f6269616e20000000"
+    },
+    {
+      "Name": "test_write_send_message[1]",
+      "Type": "PacketSendPublicMessage",
+      "Packet": {
+        "Message": {
+          "Sender": "",
+          "Text": "",
+          "Recipient": "",
+          "SenderId": 0
+        }
+      },
+      "Hex": "0100000700000000000000000000"
+    },
+    {
+      "Name": "test_write_update_match[0]",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f0000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_update_match[1]",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f0000d500000007000100400000000b0570617274790b000b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_match_payload[0]",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f0000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_new_match[0]",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f0000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_match_join_success[0]",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f0000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_match_start[0]",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f0000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408010101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "test_write_friends_list[0].85",
+      "Type": "PacketUserStatsRequest",
+      "Packet": {
+        "UserIds": [
+          1,
+          4,
+          1001
+        ]
+      },
+      "Hex": "5500000e00000003000100000004000000e9030000"
+    },
+    {
+      "Name": "test_write_friends_list[0].97",
+      "Type": "PacketUserPresenceRequest",
+      "Packet": {
+        "UserIds": [
+          1,
+          4,
+          1001
+        ]
+      },
+      "Hex": "6100000e00000003000100000004000000e9030000"
+    },
+    {
+      "Name": "test_write_friends_list[1].85",
+      "Type": "PacketUserStatsRequest",
+      "Packet": {
+        "UserIds": []
+      },
+      "Hex": "550000020000000000"
+    },
+    {
+      "Name": "test_write_friends_list[1].97",
+      "Type": "PacketUserPresenceRequest",
+      "Packet": {
+        "UserIds": []
+      },
+      "Hex": "610000020000000000"
+    },
+    {
+      "Name": "match.freemods=False.password=None",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": null,
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": false,
+          "SlotMods": null,
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f00009400000007000100400000000b057061727479000b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e903000020000000200000000002020040e20100"
+    },
+    {
+      "Name": "match.freemods=False.password=''",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": false,
+          "SlotMods": null,
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f00009500000007000100400000000b0570617274790b000b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e903000020000000200000000002020040e20100"
+    },
+    {
+      "Name": "match.freemods=False.password='secret'",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": false,
+          "SlotMods": null,
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f00009b00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e903000020000000200000000002020040e20100"
+    },
+    {
+      "Name": "match.freemods=True.password=None",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": null,
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f0000d400000007000100400000000b057061727479000b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "match.freemods=True.password=''",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f0000d500000007000100400000000b0570617274790b000b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "match.freemods=True.password='secret'",
+      "Type": "PacketCreateMatch",
+      "Packet": {
+        "Match": {
+          "Id": 7,
+          "InProgress": true,
+          "Type": 0,
+          "Mods": 64,
+          "Name": "party",
+          "Password": "secret",
+          "MapName": "Camellia - Exit This Earth's Atomosphere",
+          "MapId": 33852,
+          "MapMd5": "60b725f10c9c85c70d97880dfe8191b3",
+          "SlotStatuses": [
+            4,
+            8,
+            128,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "SlotTeams": [
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "SlotUserIds": [
+            1001,
+            32,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "HostId": 32,
+          "Mode": 0,
+          "WinCondition": 2,
+          "TeamType": 2,
+          "FreeMods": true,
+          "SlotMods": [
+            64,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Seed": 123456
+        }
+      },
+      "Hex": "1f0000db00000007000100400000000b0570617274790b067365637265740b2843616d656c6c6961202d2045786974205468697320456172746827732041746f6d6f7370686572653c8400000b2036306237323566313063396338356337306439373838306466653831393162330408800101010101010101010101010101020000000000000000000000000000e90300002000000020000000000202014000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040e20100"
+    },
+    {
+      "Name": "replay.frames=0.scorev2=False",
+      "Type": "PacketSpectateFrames",
+      "Packet": {
+        "FrameBundle": {
+          "Extra": 123,
+          "FrameCount": 0,
+          "Frames": [],
+          "Action": 5,
+          "Score": {
+            "Time": 38242,
+            "Id": 28,
+            "Num300": 320,
+            "Num100": 48,
+            "Num50": 2,
+            "NumGeki": 32,
+            "NumKatu": 8,
+            "NumMiss": 3,
+            "TotalScore": 492392,
+            "MaxCombo": 122,
+            "CurrentCombo": 39,
+            "Perfect": false,
+            "CurrentHp": 245,
+            "TagByte": 0,
+            "ScoreV2": false,
+            "ComboPortion": null,
+            "BonusPortion": null
+          },
+          "Sequence": 65535
+        }
+      },
+      "Hex": "120000260000007b000000000005629500001c400130000200200008000300688307007a00270000f50000ffff"
+    },
+    {
+      "Name": "replay.frames=2.scorev2=False",
+      "Type": "PacketSpectateFrames",
+      "Packet": {
+        "FrameBundle": {
+          "Extra": 123,
+          "FrameCount": 2,
+          "Frames": [
+            {
+              "ButtonState": 1,
+              "TaikoByte": 2,
+              "X": 1.5,
+              "Y": -2.25,
+              "Time": 10
+            },
+            {
+              "ButtonState": 3,
+              "TaikoByte": 4,
+              "X": 0.25,
+              "Y": 0.5,
+              "Time": 20
+            }
+          ],
+          "Action": 5,
+          "Score": {
+            "Time": 38242,
+            "Id": 28,
+            "Num300": 320,
+            "Num100": 48,
+            "Num50": 2,
+            "NumGeki": 32,
+            "NumKatu": 8,
+            "NumMiss": 3,
+            "TotalScore": 492392,
+            "MaxCombo": 122,
+            "CurrentCombo": 39,
+            "Perfect": false,
+            "CurrentHp": 245,
+            "TagByte": 0,
+            "ScoreV2": false,
+            "ComboPortion": null,
+            "BonusPortion": null
+          },
+          "Sequence": 65535
+        }
+      },
+      "Hex": "120000420000007b000000020001020000c03f000010c00a00000003040000803e0000003f1400000005629500001c400130000200200008000300688307007a00270000f50000ffff"
+    },
+    {
+      "Name": "replay.frames=0.scorev2=True",
+      "Type": "PacketSpectateFrames",
+      "Packet": {
+        "FrameBundle": {
+          "Extra": 123,
+          "FrameCount": 0,
+          "Frames": [],
+          "Action": 5,
+          "Score": {
+            "Time": 38242,
+            "Id": 28,
+            "Num300": 320,
+            "Num100": 48,
+            "Num50": 2,
+            "NumGeki": 32,
+            "NumKatu": 8,
+            "NumMiss": 3,
+            "TotalScore": 492392,
+            "MaxCombo": 122,
+            "CurrentCombo": 39,
+            "Perfect": false,
+            "CurrentHp": 245,
+            "TagByte": 0,
+            "ScoreV2": true,
+            "ComboPortion": 0.5,
+            "BonusPortion": 0.25
+          },
+          "Sequence": 65535
+        }
+      },
+      "Hex": "120000360000007b000000000005629500001c400130000200200008000300688307007a00270000f50001000000000000e03f000000000000d03fffff"
+    },
+    {
+      "Name": "replay.frames=2.scorev2=True",
+      "Type": "PacketSpectateFrames",
+      "Packet": {
+        "FrameBundle": {
+          "Extra": 123,
+          "FrameCount": 2,
+          "Frames": [
+            {
+              "ButtonState": 1,
+              "TaikoByte": 2,
+              "X": 1.5,
+              "Y": -2.25,
+              "Time": 10
+            },
+            {
+              "ButtonState": 3,
+              "TaikoByte": 4,
+              "X": 0.25,
+              "Y": 0.5,
+              "Time": 20
+            }
+          ],
+          "Action": 5,
+          "Score": {
+            "Time": 38242,
+            "Id": 28,
+            "Num300": 320,
+            "Num100": 48,
+            "Num50": 2,
+            "NumGeki": 32,
+            "NumKatu": 8,
+            "NumMiss": 3,
+            "TotalScore": 492392,
+            "MaxCombo": 122,
+            "CurrentCombo": 39,
+            "Perfect": false,
+            "CurrentHp": 245,
+            "TagByte": 0,
+            "ScoreV2": true,
+            "ComboPortion": 0.5,
+            "BonusPortion": 0.25
+          },
+          "Sequence": 65535
+        }
+      },
+      "Hex": "120000520000007b000000020001020000c03f000010c00a00000003040000803e0000003f1400000005629500001c400130000200200008000300688307007a00270000f50001000000000000e03f000000000000d03fffff"
+    }
+  ]
+}

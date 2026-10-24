@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  INSPECTCODE_VERSION: '2026.2.1'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-warnaserror:
+    name: Build (warnings as errors)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: g0v0.Server.Stable
+
+      - name: Checkout CommonLib
+        uses: actions/checkout@v4
+        with:
+          repository: GooGuTeam/g0v0.Server.Common
+          path: g0v0.Server.Common
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: |
+          cd g0v0.Server.Stable
+          dotnet restore
+
+      - name: Check code formatting
+        run: |
+          cd g0v0.Server.Stable
+          dotnet format --verify-no-changes --verbosity diagnostic
+
+      - name: Build with analyzers
+        run: |
+          cd g0v0.Server.Stable
+          # Keep upstream NuGet audit notices visible while treating code and analyzer warnings as errors.
+          dotnet build --no-restore --configuration Release /warnaserror '/p:WarningsNotAsErrors=NU1902%3BNU1903'
+
+  inspectcode:
+    name: JetBrains InspectCode
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: g0v0.Server.Stable
+
+      - name: Checkout CommonLib
+        uses: actions/checkout@v4
+        with:
+          repository: GooGuTeam/g0v0.Server.Common
+          path: g0v0.Server.Common
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup .NET runtime for InspectCode
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: |
+          cd g0v0.Server.Stable
+          dotnet restore
+
+      - name: Build (for InspectCode analysis)
+        run: |
+          cd g0v0.Server.Stable
+          dotnet build --no-restore --configuration Release
+
+      - name: Install JetBrains InspectCode
+        run: |
+          dotnet tool install --global JetBrains.ReSharper.GlobalTools --version ${{ env.INSPECTCODE_VERSION }}
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Run JetBrains InspectCode
+        run: |
+          cd g0v0.Server.Stable
+          mkdir -p artifacts
+          jb inspectcode g0v0.Server.Stable.sln --no-build --no-updates --severity=WARNING --swea --output=artifacts/inspectcode.sarif
+          warnings=$(jq '[.runs[].results[] | select(.level == "warning" or .level == "error")] | length' artifacts/inspectcode.sarif)
+          echo "InspectCode warning/error count: $warnings"
+          jq -r '.runs[].results[] | select(.level == "warning" or .level == "error") | [ .level, .ruleId, (.locations[0].physicalLocation.artifactLocation.uri // ""), (.locations[0].physicalLocation.region.startLine // 0), .message.text ] | @tsv' artifacts/inspectcode.sarif
+          test "$warnings" -eq 0
+
+      - name: Upload InspectCode report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jetbrains-inspectcode-stable
+          path: g0v0.Server.Stable/artifacts/inspectcode.sarif
+          if-no-files-found: error
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: g0v0.Server.Stable
+
+      - name: Checkout CommonLib
+        uses: actions/checkout@v4
+        with:
+          repository: GooGuTeam/g0v0.Server.Common
+          path: g0v0.Server.Common
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: |
+          cd g0v0.Server.Stable
+          dotnet restore
+
+      - name: Build
+        run: |
+          cd g0v0.Server.Stable
+          dotnet build --no-restore --configuration Release
+
+      - name: Run tests
+        run: |
+          cd g0v0.Server.Stable
+          dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: g0v0.Server.Stable/**/TestResults/**
+          retention-days: 30
