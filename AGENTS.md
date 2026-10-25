@@ -66,7 +66,7 @@ Enforced by `.editorconfig`, `.globalconfig`, `stylecop.json`, and `Directory.Bu
 
 Entrypoint: `g0v0.Server.Stable/Program.cs`. `ConfigureServices` registers `IPathProvider` and `ConfigManager` before Common's repository, GeoIP, Redis (`ServerIdentify.Stable`), cache, fetcher, and storage extensions. The database context follows `GeneralConfig.UseLegacyDatabase`.
 
-`IPlayerManager`, `IChatServer`, `RulesetManager`, `StableScoreSubmissionTracker`, and the hosted `ScoreProcessingQueue` are singletons. Route handlers, `StableWebAuthenticator`, `IPacketFacade`, and the score processor are scoped. `PacketFacade` supplies the player/chat managers, rulesets, and `IServiceScopeFactory` to packet readers and handlers. Singleton services create scopes for repository access; keep request-scoped database services out of stored session state.
+`IPlayerManager`, `IRoomManager`, `IChatServer`, `RulesetManager`, `StableScoreSubmissionTracker`, and the hosted `ScoreProcessingQueue` are singletons. Route handlers, `StableWebAuthenticator`, `IPacketFacade`, and the score processor are scoped. `PacketFacade` supplies the player/room/chat managers, rulesets, and `IServiceScopeFactory` to packet readers and handlers. Singleton services create scopes for repository access; keep request-scoped database services out of stored session state.
 
 `ConfigureApp` enables forwarded headers and HTTPS redirection, then maps:
 
@@ -102,7 +102,7 @@ Entrypoint: `g0v0.Server.Stable/Program.cs`. `ConfigureServices` registers `IPat
 - `PacketConvert` frames each packet with a seven-byte little-endian header: `ushort` ID, one reserved byte, and `uint` payload length. Multiple frames are concatenated without an outer count. Serialization leaves the caller's stream open. Unknown IDs and invalid complete payloads are skipped; a truncated frame ends parsing.
 - Default payload serialization uses public settable properties in metadata/declaration order. **Property order, enum backing types, and array layout are wire contracts.** Adding a public settable helper property can change the payload; use the existing custom reader/writer pattern when needed.
 - `[OsuField]` describes fixed/derived array lengths, conditional fields, element masks, and null-versus-empty strings. Raw packets use `rawData: true` and a `byte[] Data` containing the complete payload without an inner length prefix. Custom readers are static `Read(SerializationReader, IPacketFacade)` methods; custom writers are instance `Write(SerializationWriter)` methods, enabled by the corresponding attribute flags.
-- Many multiplayer and tournament packet types currently implement the wire layout but throw `NotSupportedException` from `Handle` (for example, `PacketCreateMatch` and `PacketMatchScoreUpdate`). A registered packet is not evidence of implemented match behavior; the polling handler logs and skips these failures.
+- Multiplayer and tournament packets dispatch through `IRoomManager`. `PacketMatchScoreUpdate` reads a complete `ScoreFrame`, including the conditional ScoreV2 doubles; malformed lengths are rejected by `PacketConvert` before the handler runs. Do not turn multiplayer score updates back into raw forwarding.
 
 ### Players & spectating
 
@@ -111,6 +111,17 @@ Entrypoint: `g0v0.Server.Stable/Program.cs`. `ConfigureServices` registers `IPat
 - Spectator relationships use **session object identity**, not only account IDs. Both sessions must be registered; self-spectating and restricted endpoints are rejected. Switching hosts removes the previous relationship, updates fellow spectators, and notifies the host. Removing a session also clears its spectator relationships.
 - `Player` owns a locked queue of already-serialized outgoing packets. Callbacks enqueue presence/stats/spectator events for the next HTTP poll. Frame forwarding uses the manager's current watcher set and preserves the raw replay payload.
 - `PacketLogout` disconnects chat before removing the session. It clears `User.IsOnline` and updates `LastVisit` only after the account's final session has gone.
+
+### Stable multiplayer
+
+- `RoomManager` owns an in-memory registry with independent nonnegative `short` protocol IDs. `IRoom.RoomId` is the shared database's `long` ID; never cast it to a protocol ID. Joining only resolves live Stable rooms, without hydrating arbitrary database/lazer rooms.
+- Membership operations take the manager's semaphore and then a room's `RoomLock`; gameplay commands take only the room lock through `ExecuteAsync`. Room methods require the caller to hold that lock. Do not acquire the membership semaphore while holding a room lock. Membership and observer indexes use session object identity.
+- `Room` owns all sixteen slots, host identity, teams, per-slot mods and gameplay barriers. Client match snapshots supply settings only; their IDs, host, slots and in-progress flags are never authoritative. Locking an occupied slot removes the player and participation record immediately and sends the removed player the locked snapshot.
+- Head-to-head/tag-coop use neutral teams; team-versus/tag-team-versus default to red. Free mods keep speed changes global and host-controlled; disabling free mods combines global speed with the host's personal mods. Slots cannot move or change readiness/teams/mods during a round.
+- Only the participants selected at start receive gameplay packets, together with authorized tournament observers. Missing-map players and late joiners wait for the next round. Load/skip barriers fire once and are rechecked on departure; failures still wait for completion. Score frames are retained per slot and reserialized with the server's slot ID.
+- Room creation, participants, host/settings/status, end dates and playlists use Common's `IRoomRepository`. Creation explicitly writes `ServerIdentify.Stable` to `Room.Source`; any future database hydration must query that source. `MapId = -1` is a transient selection state with no playlist item. Actual maps resolve by checksum through `IBeatmapRepository` (and the configured fetcher); unresolved maps are rejected. Each changed selection expires the previous item, while start seals an item with `PlayedAt`/`Expired`; replaying the same map creates another item. Name-only changes do not append items. Stable free mods become allowed mods, not lazer's beatmap/ruleset freestyle mode.
+- Room channels use the existing `mp_{databaseRoomId}` storage and appear to members as `#multiplayer`. They are absent from the public directory. Tournament sessions can observe a room without occupying slots or receiving its password. `PlayerRemoved` triggers exact-session cleanup on replacement; `Player.Offline` waits for cleanup before returning.
+- `Manager/RoomManagerTests` exercises serialized client packets, authoritative slots, permission checks, lobby/password isolation, room chat, playlist history, ScoreV1/V2 decoding, barriers, replacements and concurrent room operations.
 
 ### Chat
 

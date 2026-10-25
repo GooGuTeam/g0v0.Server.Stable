@@ -18,6 +18,9 @@ public class PlayerManager : IPlayerManager
     private readonly Dictionary<IPlayer, IPlayer> _spectating = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<IPlayer, HashSet<IPlayer>> _spectators = new(ReferenceEqualityComparer.Instance);
 
+    /// <inheritdoc/>
+    public event EventHandler<PlayerRemovedEventArgs>? PlayerRemoved;
+
     /// <inheritdoc />
     public void AddPlayer(IPlayer player)
     {
@@ -299,6 +302,8 @@ public class PlayerManager : IPlayerManager
         {
             _playersById.Remove(player.Id);
         }
+
+        PlayerRemoved?.Invoke(this, new PlayerRemovedEventArgs(player));
 
         if (isKicked)
         {

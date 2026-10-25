@@ -25,7 +25,7 @@ public class Match
     public bool InProgress { get; set; }
 
     /// <summary>
-    /// Gets or sets the room type (0 = standard, 1 = free mods, 2 = tag coop, ...).
+    /// Gets or sets the legacy room type (0 = standard).
     /// </summary>
     public sbyte Type { get; set; }
 
@@ -116,8 +116,8 @@ public class Match
     /// Gets or sets the per-slot mods.
     /// </summary>
     /// <remarks>
-    /// The array is only serialized when <see cref="FreeMods"/> is set, so a room without free mods
-    /// ends the packet after the previous field.
+    /// The array is only serialized when <see cref="FreeMods"/> is set.
+    /// The seed follows this array, or the free-mod flag when the array is absent.
     /// </remarks>
     [OsuField(ArrayLength = 16, Condition = nameof(FreeMods))]
     public LegacyMods[]? SlotMods { get; set; }

@@ -16,6 +16,7 @@ public class Player : IPlayer
     private readonly Lock _queueLock = new();
     private readonly Queue<byte[]> _outgoing = new();
     private IPlayerManager? _manager;
+    private IRoomManager? _roomManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Player"/> class with its lifecycle manager.
@@ -113,10 +114,13 @@ public class Player : IPlayer
     }
 
     /// <inheritdoc />
-    public Task Offline(bool isKicked = false)
+    public async Task Offline(bool isKicked = false)
     {
         GetManager().RemovePlayer(this, isKicked);
-        return Task.CompletedTask;
+        if (_roomManager != null)
+        {
+            await _roomManager.DisconnectAsync(this).ConfigureAwait(false);
+        }
     }
 
     /// <inheritdoc />
@@ -254,6 +258,8 @@ public class Player : IPlayer
 
     /// <inheritdoc />
     public void OnWatchedPlayerOffline(IPlayer player) => Enqueue(new PacketNotification { Message = $"{player.Name} stopped broadcasting spectator frames." });
+
+    internal void AttachRoomManager(IRoomManager manager) => _roomManager = manager;
 
     internal void AttachManager(IPlayerManager manager)
     {

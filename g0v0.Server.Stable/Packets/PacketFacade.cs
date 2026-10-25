@@ -33,4 +33,9 @@ public class PacketFacade : IPacketFacade
     /// Gets or sets the factory for request-independent service scopes.
     /// </summary>
     public IServiceScopeFactory ScopeFactory { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the live Stable room registry.
+    /// </summary>
+    public IRoomManager RoomManager { get; set; } = null!;
 }

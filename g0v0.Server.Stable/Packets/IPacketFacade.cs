@@ -33,4 +33,9 @@ public interface IPacketFacade
     /// Gets or sets the factory for request-independent service scopes.
     /// </summary>
     IServiceScopeFactory ScopeFactory { get; set; }
+
+    /// <summary>
+    /// Gets or sets the live Stable room registry.
+    /// </summary>
+    public IRoomManager RoomManager { get; set; }
 }

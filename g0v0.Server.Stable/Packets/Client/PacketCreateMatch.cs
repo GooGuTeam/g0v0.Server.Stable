@@ -17,10 +17,9 @@ public class PacketCreateMatch : IClientPacket
     public Match Match { get; set; } = new();
 
     /// <inheritdoc />
-    public Task<IPacket[]> Handle(IPlayer player, IPacketFacade facade)
+    public async Task<IPacket[]> Handle(IPlayer player, IPacketFacade facade)
     {
-        // The handler is not implemented yet; the dispatcher logs and skips it, so an explicit
-        // unsupported-operation error keeps the poll alive instead of failing the request.
-        throw new NotSupportedException($"{GetType().Name} is not implemented by this server yet.");
+        await facade.RoomManager.CreateRoomAsync(player, Match).ConfigureAwait(false);
+        return [];
     }
 }

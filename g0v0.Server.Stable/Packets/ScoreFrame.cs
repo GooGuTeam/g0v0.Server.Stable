@@ -99,4 +99,10 @@ public class ScoreFrame
     /// </summary>
     [OsuField(Condition = nameof(ScoreV2))]
     public double? BonusPortion { get; set; }
+
+    /// <summary>
+    /// Copies a parsed score snapshot so its sender cannot mutate retained room state.
+    /// </summary>
+    /// <returns>An independent score frame.</returns>
+    public ScoreFrame Copy() => (ScoreFrame)MemberwiseClone();
 }

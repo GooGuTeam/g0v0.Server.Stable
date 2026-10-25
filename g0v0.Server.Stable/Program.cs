@@ -83,12 +83,14 @@ public static class Program
 
         builder.Services.AddSingleton<IPlayerManager, PlayerManager>();
         builder.Services.AddSingleton<IChatServer, ChatServer>();
+        builder.Services.AddSingleton<IRoomManager, RoomManager>();
         builder.Services.AddSingleton(_ => new RulesetManager(Path.Combine(builder.Environment.ContentRootPath, "rulesets")));
         builder.Services.AddScoped<IPacketFacade>(provider => new PacketFacade
         {
             ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
             PlayerManager = provider.GetRequiredService<IPlayerManager>(),
             ChatServer = provider.GetRequiredService<IChatServer>(),
+            RoomManager = provider.GetRequiredService<IRoomManager>(),
             RulesetManager = provider.GetRequiredService<RulesetManager>()
         });
 

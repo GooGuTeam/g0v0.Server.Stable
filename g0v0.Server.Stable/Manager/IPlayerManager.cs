@@ -12,6 +12,11 @@ namespace g0v0.Server.Stable.Manager;
 public interface IPlayerManager
 {
     /// <summary>
+    /// Occurs when an exact session is removed or replaced.
+    /// </summary>
+    event EventHandler<PlayerRemovedEventArgs>? PlayerRemoved;
+
+    /// <summary>
     /// Adds a session, replacing an existing ordinary session for the same account.
     /// </summary>
     /// <param name="player">The session to register. Tournament sessions may coexist.</param>
