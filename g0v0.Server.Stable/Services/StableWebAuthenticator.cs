@@ -2,6 +2,7 @@
 
 using g0v0.Server.Common.Database.Models;
 using g0v0.Server.Common.Database.Repository;
+using g0v0.Server.Common.Utils;
 
 namespace g0v0.Server.Stable.Services;
 
@@ -40,7 +41,7 @@ public sealed class StableWebAuthenticator(IUserRepository users, ILoginReposito
         string? passwordMd5,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(username) || passwordMd5 is not { Length: 32 } || !passwordMd5.All(char.IsAsciiHexDigit))
+        if (string.IsNullOrWhiteSpace(username) || !UserPasswordHasher.IsValidDigest(passwordMd5))
         {
             return new StableAuthenticationResult(User: null, StableAuthenticationFailure.InvalidRequest);
         }
@@ -64,15 +65,10 @@ public sealed class StableWebAuthenticator(IUserRepository users, ILoginReposito
             return new StableAuthenticationResult(User: null, StableAuthenticationFailure.IncorrectCredentials);
         }
 
-        try
-        {
-            return BCrypt.Net.BCrypt.Verify(passwordMd5.ToLowerInvariant(), hash)
-                ? new StableAuthenticationResult(User: user, StableAuthenticationFailure.None)
-                : new StableAuthenticationResult(User: null, StableAuthenticationFailure.IncorrectCredentials);
-        }
-        catch (BCrypt.Net.SaltParseException)
-        {
-            return new StableAuthenticationResult(User: null, StableAuthenticationFailure.IncorrectCredentials);
-        }
+        // A malformed stored hash is treated as a mismatch by the shared hasher, so a legacy row
+        // never turns a login attempt into a server fault.
+        return UserPasswordHasher.VerifyDigest(passwordMd5, hash)
+            ? new StableAuthenticationResult(User: user, StableAuthenticationFailure.None)
+            : new StableAuthenticationResult(User: null, StableAuthenticationFailure.IncorrectCredentials);
     }
 }

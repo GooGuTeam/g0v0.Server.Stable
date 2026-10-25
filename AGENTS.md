@@ -46,6 +46,7 @@ CI has three jobs: `build-warnaserror` (format verification and an analyzer buil
 - `verification.json` — login device verification. `EnableSessionVerification` and `DeviceTrustDurationDays` control whether a Stable session may enter the player registry and how long its device remains trusted.
 - Optional `geoip.json` — GeoIP database location and refresh settings. `AddGeoIP()` uses defaults when it is absent and registers both `IGeoIPService` and `TimeProvider`.
 - Optional `chat.json` — `ChatConfig`; Stable uses `MessageLengthLimit` and falls back to defaults when the file is absent.
+- Optional `registration.json` — `RegistrationConfig`; `AllowInGameRegistration` and `DisallowedUsernames`. Absent means in-game registration is allowed and only the lazer API's `banned_name` defaults are refused.
 
 Configuration uses **Newtonsoft.Json**. The default file name is the snake_case type name plus `.json`; `[ConfigFile("...")]` overrides it (all files listed above have explicit names). `Get<T>()` requires the file to exist; `TryGet<T>()` supports optional files. Only properties marked `[Reloadable]` change on `Reload<T>()`. Use the config classes in `Common` as the schema reference.
 
@@ -70,12 +71,21 @@ Entrypoint: `g0v0.Server.Stable/Program.cs`. `ConfigureServices` registers `IPat
 `ConfigureApp` enables forwarded headers and HTTPS redirection, then maps:
 
 - `GET /healthz` — service health response.
+- `POST /users` — `RegisterRouteHandler`, in-game account creation.
 - `POST /` — `LoginRouteHandler`, the unframed login handshake.
 - `POST /packet` — `PacketRouteHandler`, authenticated binary packet polling.
 - `POST /web/osu-submit-modular-selector.php` — `SubmitScoreRouteHandler`.
 - `POST /web/osu-getbeatmapinfo.php` — `BeatmapInfoRouteHandler`.
 - `GET /web/osu-osz2-getscores.php` — `LeaderboardRouteHandler`.
 - `GET /web/osu-getfriends.php` — `FriendsRouteHandler`.
+
+### Registration
+
+- `RegisterRouteHandler` serves the form-urlencoded `user[username]`/`user[user_email]`/`user[password]` body the osu! clients post to `/users`. The rules live in Common's `UserCredentialValidator` so other servers apply the same policy: 2-15 characters for the username, a dotted-domain email, and a password of 8-32 characters with more than three distinct characters built from at least two character classes. Do not reimplement them here.
+- The endpoint answers `ok` (`text/plain`) or the `{"form_error":{"user":{...}}}` document the clients attach to the matching input. Do not replace it with a plain status code: the client reports nothing useful for an unparseable body. Uniqueness, the disabled switch, and any other rule produce that shape; the disabled switch is checked before validation so a closed endpoint reveals nothing.
+- `check` non-zero only validates the submission; the client uses it while the player is still typing, so it must not create the account.
+- Hashing and verification both go through Common's `UserPasswordHasher`, which covers the **hex MD5** of the password rather than the plain text, because `StableWebAuthenticator` verifies the MD5 the login handshake sends. A hash of the plain text makes the new account unable to log in (`PlainPasswordBcryptCannotBeVerifiedUsingAStableMd5` covers the same trap). Do not call `BCrypt.Net.BCrypt` here.
+- The account and its per-mode statistics rows are written by `IUserRepository.CreateAsync(user, modes, ...)` as one transaction. `UserStatisticsDefaults.GetModes` seeds 0-3 plus the relax/autopilot modes when `game.json` enables them; seeding separately would leave an account without statistics, and a retry would then hit "username already taken". A `DbUpdateException` from a lost unique-index race is reported as a generic server error.
 
 ### Login, sessions & packet polling
 

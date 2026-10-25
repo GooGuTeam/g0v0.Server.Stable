@@ -93,6 +93,7 @@ public static class Program
         });
 
         builder.Services.AddScoped<StableWebAuthenticator>();
+        builder.Services.AddScoped<RegisterRouteHandler>();
         builder.Services.AddScoped<LoginRouteHandler>();
         builder.Services.AddScoped<PacketRouteHandler>();
         builder.Services.AddScoped<SubmitScoreRouteHandler>();
@@ -117,6 +118,7 @@ public static class Program
         app.UseHttpsRedirection();
 
         app.MapGet("/healthz", () => Results.Ok(new { Service = "g0v0.Server.Stable", Status = "ok" }));
+        app.MapPost("/users", (HttpContext context, RegisterRouteHandler handler) => handler.HandleAsync(context));
         app.MapPost("/", (HttpContext context, LoginRouteHandler handler) => handler.HandleAsync(context));
         app.MapPost("/packet", (HttpContext context, PacketRouteHandler handler) => handler.HandleAsync(context));
         app.MapPost("/web/osu-submit-modular-selector.php", (HttpContext context, SubmitScoreRouteHandler handler) => handler.HandleAsync(context));
