@@ -1,7 +1,6 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
 using System.Globalization;
-using System.Net;
 using g0v0.Server.Common.Configuration;
 using g0v0.Server.Common.Database.Models;
 using g0v0.Server.Common.Database.Repository;
@@ -110,16 +109,13 @@ public sealed class RegisterRouteHandler(
         }
 
         // "Checking values only" is how the client asks whether a submission would be accepted.
-        if (!int.TryParse(form["check"], NumberStyles.Integer, CultureInfo.InvariantCulture, out int check) || check == 0)
+        if (int.TryParse(form["check"], NumberStyles.Integer, CultureInfo.InvariantCulture, out int check) && check != 0)
         {
-            IResult? failure = await CreateAccountAsync(context, username, email, password).ConfigureAwait(false);
-            if (failure is not null)
-            {
-                return failure;
-            }
+            return Results.Text(SuccessBody);
         }
 
-        return Results.Text(SuccessBody);
+        IResult? failure = await CreateAccountAsync(context, username, email, password).ConfigureAwait(false);
+        return failure ?? Results.Text(SuccessBody);
     }
 
     private static IResult FormFailure(int statusCode, IEnumerable<string>? username = null, IEnumerable<string>? email = null, IEnumerable<string>? password = null, string? message = null)
@@ -147,7 +143,7 @@ public sealed class RegisterRouteHandler(
         {
             null => "127.0.0.1",
             { IsIPv4MappedToIPv6: true } address => address.MapToIPv4().ToString(),
-            IPAddress address => address.ToString()
+            var address => address.ToString(),
         };
     }
 
@@ -166,7 +162,9 @@ public sealed class RegisterRouteHandler(
             PwBcrypt = UserPasswordHasher.HashPassword(password),
             CountryCode = location.CountryIso is { Length: 2 } country ? country.ToUpperInvariant() : DefaultCountryCode,
             JoinDate = now,
-            LastVisit = now
+            LastVisit = now,
+            IsSupporter = configs.TryGet<GameConfig>()?.EnableSupporterForNewRegistration ?? false,
+            SupportLevel = configs.TryGet<GameConfig>()?.EnableSupporterForNewRegistration ?? false ? 1 : 0
         };
 
         try
