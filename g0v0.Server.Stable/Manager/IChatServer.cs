@@ -79,4 +79,20 @@ public interface IChatServer
     /// <param name="player">The session to inspect.</param>
     /// <returns>The joined channels in display order.</returns>
     IReadOnlyList<StableChannel> GetPlayerChannels(IPlayer player);
+
+    /// <summary>
+    /// Joins a room's private channel without advertising it in the public directory.
+    /// </summary>
+    /// <param name="player">The joining session.</param>
+    /// <param name="channel">The server-authorized room channel.</param>
+    /// <returns>A task that completes after membership is stored and announced.</returns>
+    Task JoinMultiplayerChannelAsync(IPlayer player, StableChannel channel);
+
+    /// <summary>
+    /// Removes this exact session from a private room channel.
+    /// </summary>
+    /// <param name="player">The departing session.</param>
+    /// <param name="channel">The server-authorized room channel.</param>
+    /// <returns>A task that completes after membership is removed.</returns>
+    Task LeaveMultiplayerChannelAsync(IPlayer player, StableChannel channel);
 }

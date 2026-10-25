@@ -1,5 +1,6 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
+using System.Collections.Concurrent;
 using g0v0.Server.Common.Configuration;
 using g0v0.Server.Common.Database.Models;
 using g0v0.Server.Common.Database.Repository;
@@ -45,6 +46,7 @@ public class ChatServer(
         ClientPrivileges.Moderator | ClientPrivileges.Owner | ClientPrivileges.Developer;
 
     private readonly Lock _lock = new();
+    private readonly ConcurrentDictionary<IPlayer, StableChannel> _multiplayer = new(ReferenceEqualityComparer.Instance);
     private StableChannel[] _channels = [];
     private bool _loadedFromStorage;
 
@@ -90,11 +92,18 @@ public class ChatServer(
     public async Task<IPacket[]> JoinChannelAsync(IPlayer player, string channelName)
     {
         ArgumentNullException.ThrowIfNull(player);
-        StableChannel? channel = FindChannel(await EnsureChannelsAsync().ConfigureAwait(false), channelName);
+        StableChannel? channel = string.Equals(channelName, "#multiplayer", StringComparison.Ordinal)
+            ? _multiplayer.GetValueOrDefault(player)
+            : FindChannel(await EnsureChannelsAsync().ConfigureAwait(false), channelName);
         if (channel is null)
         {
             logger.LogDebug("Session {UserId} tried to join unknown channel {Channel}.", player.Id, channelName);
             return [];
+        }
+
+        if (string.Equals(channelName, "#multiplayer", StringComparison.Ordinal))
+        {
+            return [new PacketChannelJoinSuccess { Name = channel.Name }, ChannelInfo(channel)];
         }
 
         if (!channel.Add(player))
@@ -113,7 +122,14 @@ public class ChatServer(
     public async Task<IPacket[]> LeaveChannelAsync(IPlayer player, string channelName)
     {
         ArgumentNullException.ThrowIfNull(player);
-        StableChannel? channel = FindChannel(await EnsureChannelsAsync().ConfigureAwait(false), channelName);
+        if (string.Equals(channelName, "#multiplayer", StringComparison.Ordinal))
+        {
+            return [];
+        }
+
+        StableChannel? channel = string.Equals(channelName, "#multiplayer", StringComparison.Ordinal)
+            ? _multiplayer.GetValueOrDefault(player)
+            : FindChannel(await EnsureChannelsAsync().ConfigureAwait(false), channelName);
         if (channel is null || !channel.Remove(player))
         {
             return [];
@@ -129,7 +145,9 @@ public class ChatServer(
     public async Task<IPacket[]> SendChannelMessageAsync(IPlayer player, string channelName, string text)
     {
         ArgumentNullException.ThrowIfNull(player);
-        StableChannel? channel = FindChannel(await EnsureChannelsAsync().ConfigureAwait(false), channelName);
+        StableChannel? channel = string.Equals(channelName, "#multiplayer", StringComparison.Ordinal)
+            ? _multiplayer.GetValueOrDefault(player)
+            : FindChannel(await EnsureChannelsAsync().ConfigureAwait(false), channelName);
         if (channel is null || !channel.Contains(player))
         {
             logger.LogDebug("Session {UserId} wrote to {Channel} without being a member.", player.Id, channelName);
@@ -230,7 +248,58 @@ public class ChatServer(
     public IReadOnlyList<StableChannel> GetPlayerChannels(IPlayer player)
     {
         ArgumentNullException.ThrowIfNull(player);
-        return GetChannels().Where(channel => channel.Contains(player)).ToArray();
+        IEnumerable<StableChannel> channels = GetChannels().Where(channel => channel.Contains(player));
+        return _multiplayer.TryGetValue(player, out StableChannel? roomChannel)
+            ? channels.Append(roomChannel).ToArray()
+            : channels.ToArray();
+    }
+
+    /// <inheritdoc/>
+    public async Task JoinMultiplayerChannelAsync(IPlayer player, StableChannel channel)
+    {
+        if (_multiplayer.TryGetValue(player, out StableChannel? current) && ReferenceEquals(current, channel))
+        {
+            return;
+        }
+
+        if (channel.ChannelId is { } channelId)
+        {
+            using IServiceScope scope = scopeFactory.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<IChatRepository>()
+                .AddUserChannelAsync(channelId, player.Id).ConfigureAwait(false);
+        }
+
+        _multiplayer[player] = channel;
+        channel.Add(player);
+        player.Enqueue(new PacketChannelJoinSuccess { Name = channel.Name });
+        foreach (IPlayer member in channel.GetMembers())
+        {
+            member.Enqueue(ChannelInfo(channel));
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task LeaveMultiplayerChannelAsync(IPlayer player, StableChannel channel)
+    {
+        if (!_multiplayer.TryGetValue(player, out StableChannel? current) || !ReferenceEquals(current, channel))
+        {
+            return;
+        }
+
+        if (channel.ChannelId is { } channelId && !channel.GetMembers().Any(member => member.Id == player.Id && !ReferenceEquals(member, player)))
+        {
+            using IServiceScope scope = scopeFactory.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<IChatRepository>()
+                .RemoveUserChannelAsync(channelId, player.Id, hide: false).ConfigureAwait(false);
+        }
+
+        _multiplayer.TryRemove(new KeyValuePair<IPlayer, StableChannel>(player, channel));
+        channel.Remove(player);
+        player.Enqueue(new PacketChannelKick { Name = channel.Name });
+        foreach (IPlayer member in channel.GetMembers())
+        {
+            member.Enqueue(ChannelInfo(channel));
+        }
     }
 
     private static StableChannel? FindChannel(IReadOnlyList<StableChannel> channels, string name)
