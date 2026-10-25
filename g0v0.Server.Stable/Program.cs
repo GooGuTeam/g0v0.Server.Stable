@@ -1,5 +1,6 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
+using g0v0.Server.Common.Beatmaps;
 using g0v0.Server.Common.Communication;
 using g0v0.Server.Common.Configuration;
 using g0v0.Server.Common.Database.MySQL;
@@ -7,6 +8,7 @@ using g0v0.Server.Common.Database.PostgreSQL;
 using g0v0.Server.Common.Extensions;
 using g0v0.Server.Common.Rulesets;
 using g0v0.Server.Common.Scoring;
+using g0v0.Server.Common.Screenshots;
 using g0v0.Server.Common.Utils;
 using g0v0.Server.Stable.Manager;
 using g0v0.Server.Stable.Packets;
@@ -68,6 +70,10 @@ public static class Program
         builder.Services.AddCache();
         builder.Services.AddFetcher();
         builder.Services.AddStorage();
+        builder.Services.AddScoped<BeatmapFeedbackService>();
+        builder.Services.AddScoped<BeatmapDownloadService>();
+        builder.Services.AddScoped<ReplayService>();
+        builder.Services.AddScoped<ScreenshotService>();
 
         builder.Services.AddSingleton<StableScoreSubmissionTracker>();
         builder.Services.AddSingleton<ScoreAttributeUtils>();
@@ -102,6 +108,15 @@ public static class Program
         builder.Services.AddScoped<BeatmapInfoRouteHandler>();
         builder.Services.AddScoped<LeaderboardRouteHandler>();
         builder.Services.AddScoped<FriendsRouteHandler>();
+        builder.Services.AddScoped<SeasonalRouteHandler>();
+        builder.Services.AddScoped<RatingRouteHandler>();
+        builder.Services.AddScoped<FavouritesRouteHandler>();
+        builder.Services.AddScoped<AddFavouriteRouteHandler>();
+        builder.Services.AddScoped<ReplayRouteHandler>();
+        builder.Services.AddScoped<ScreenshotRouteHandler>();
+        builder.Services.AddScoped<DifficultyRatingRouteHandler>();
+        builder.Services.AddScoped<BeatmapDownloadRouteHandler>();
+        builder.Services.AddScoped<BeatmapFileRouteHandler>();
     }
 
     /// <summary>
@@ -127,6 +142,16 @@ public static class Program
         app.MapPost("/web/osu-getbeatmapinfo.php", (HttpContext context, BeatmapInfoRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/web/osu-osz2-getscores.php", (HttpContext context, LeaderboardRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/web/osu-getfriends.php", (HttpContext context, FriendsRouteHandler handler) => handler.HandleAsync(context));
+
+        app.MapGet("/web/osu-getseasonal.php", (HttpContext context, SeasonalRouteHandler handler) => handler.HandleAsync(context));
+        app.MapGet("/web/osu-rate.php", (HttpContext context, RatingRouteHandler handler) => handler.HandleAsync(context));
+        app.MapGet("/web/osu-getreplay.php", (HttpContext context, ReplayRouteHandler handler) => handler.HandleAsync(context));
+        app.MapGet("/web/osu-getfavourites.php", (HttpContext context, FavouritesRouteHandler handler) => handler.HandleAsync(context));
+        app.MapGet("/web/osu-addfavourite.php", (HttpContext context, AddFavouriteRouteHandler handler) => handler.HandleAsync(context));
+        app.MapPost("/web/osu-screenshot.php", (HttpContext context, ScreenshotRouteHandler handler) => handler.HandleAsync(context));
+        app.MapPost("/difficulty-rating", (HttpContext context, DifficultyRatingRouteHandler handler) => handler.HandleAsync(context));
+        app.MapGet("/d/{map_set_id}", (HttpContext context, BeatmapDownloadRouteHandler handler) => handler.HandleAsync(context));
+        app.MapGet("/web/maps/{map_filename}", (HttpContext context, BeatmapFileRouteHandler handler) => handler.HandleAsync(context));
 
         return app;
     }

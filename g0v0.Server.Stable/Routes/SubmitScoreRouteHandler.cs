@@ -212,7 +212,7 @@ public sealed class SubmitScoreRouteHandler(
             using MemoryStream frames = new();
             await replay.CopyToAsync(frames, context.RequestAborted);
             byte[] content = submission.CreateReplay(score, user.Username, version, frames.ToArray());
-            await storage.WriteFileAsync($"replays/{score.Id}_{score.BeatmapId}_{score.UserId}_lazer_replay.osr", content, "application/x-osu-replay", cancellationToken: context.RequestAborted);
+            await storage.WriteFileAsync(score.ReplayFilename, content, "application/x-osu-replay", cancellationToken: context.RequestAborted);
             await scores.MarkScoreHasReplay(score.Id);
         }
 
