@@ -1,5 +1,7 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
+using g0v0.Server.Common.Database.Models;
+using g0v0.Server.Common.Database.Repository;
 using g0v0.Server.Stable.Attributes;
 using g0v0.Server.Stable.Objects.Players;
 
@@ -17,10 +19,21 @@ public class PacketFriendRemove : IClientPacket
     public int UserId { get; set; }
 
     /// <inheritdoc />
-    public Task<IPacket[]> Handle(IPlayer player, IPacketFacade facade)
+    public async Task<IPacket[]> Handle(IPlayer player, IPacketFacade facade)
     {
-        // The handler is not implemented yet; the dispatcher logs and skips it, so an explicit
-        // unsupported-operation error keeps the poll alive instead of failing the request.
-        throw new NotSupportedException($"{GetType().Name} is not implemented by this server yet.");
+        if (UserId <= 0 || UserId == player.Id)
+        {
+            return [];
+        }
+
+        using IServiceScope scope = facade.ScopeFactory.CreateScope();
+        IRelationshipRepository relationships = scope.ServiceProvider.GetRequiredService<IRelationshipRepository>();
+        Relationship? relationship = await relationships.GetRelationshipAsync(player.Id, UserId).ConfigureAwait(false);
+        if (relationship?.Type == RelationshipType.Follow)
+        {
+            await relationships.DeleteAsync(relationship).ConfigureAwait(false);
+        }
+
+        return [];
     }
 }

@@ -1,5 +1,7 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
+using g0v0.Server.Common.Database.Models;
+using g0v0.Server.Common.Database.Repository;
 using g0v0.Server.Stable.Attributes;
 using g0v0.Server.Stable.Objects.Players;
 
@@ -17,10 +19,38 @@ public class PacketFriendAdd : IClientPacket
     public int UserId { get; set; }
 
     /// <inheritdoc />
-    public Task<IPacket[]> Handle(IPlayer player, IPacketFacade facade)
+    public async Task<IPacket[]> Handle(IPlayer player, IPacketFacade facade)
     {
-        // The handler is not implemented yet; the dispatcher logs and skips it, so an explicit
-        // unsupported-operation error keeps the poll alive instead of failing the request.
-        throw new NotSupportedException($"{GetType().Name} is not implemented by this server yet.");
+        if (UserId <= 0 || UserId == player.Id)
+        {
+            return [];
+        }
+
+        using IServiceScope scope = facade.ScopeFactory.CreateScope();
+        IUserRepository users = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+        if (await users.GetByIdAsync(UserId).ConfigureAwait(false) is null)
+        {
+            return [];
+        }
+
+        IRelationshipRepository relationships = scope.ServiceProvider.GetRequiredService<IRelationshipRepository>();
+        Relationship? existing = await relationships.GetRelationshipAsync(player.Id, UserId).ConfigureAwait(false);
+        if (existing?.Type == RelationshipType.Follow)
+        {
+            return [];
+        }
+
+        Relationship follow = new() { UserId = player.Id, TargetId = UserId, Type = RelationshipType.Follow };
+        if (existing is null)
+        {
+            await relationships.CreateAsync(follow).ConfigureAwait(false);
+        }
+        else
+        {
+            // Type is part of the primary key. Replace it using a new, untracked instance.
+            await relationships.UpdateAsync(follow).ConfigureAwait(false);
+        }
+
+        return [];
     }
 }
