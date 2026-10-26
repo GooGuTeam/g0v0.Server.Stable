@@ -69,6 +69,7 @@ public static class Program
         builder.Services.AddRedis(ServerIdentify.Stable);
         builder.Services.AddCache();
         builder.Services.AddFetcher();
+        builder.Services.AddBeatmapSearch();
         builder.Services.AddStorage();
         builder.Services.AddScoped<BeatmapFeedbackService>();
         builder.Services.AddScoped<BeatmapDownloadService>();
@@ -118,6 +119,8 @@ public static class Program
         builder.Services.AddScoped<BeatmapDownloadRouteHandler>();
         builder.Services.AddScoped<BeatmapFileRouteHandler>();
         builder.Services.AddScoped<CallPeppyRouteHandler>();
+        builder.Services.AddScoped<SearchRouteHandler>();
+        builder.Services.AddScoped<SearchSetRouteHandler>();
     }
 
     /// <summary>
@@ -143,6 +146,8 @@ public static class Program
         app.MapPost("/web/osu-getbeatmapinfo.php", (HttpContext context, BeatmapInfoRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/web/osu-osz2-getscores.php", (HttpContext context, LeaderboardRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/web/osu-getfriends.php", (HttpContext context, FriendsRouteHandler handler) => handler.HandleAsync(context));
+        app.MapGet("/web/osu-search.php", (HttpContext context, SearchRouteHandler handler) => handler.HandleAsync(context));
+        app.MapGet("/web/osu-search-set.php", (HttpContext context, SearchSetRouteHandler handler) => handler.HandleAsync(context));
 
         app.MapGet("/web/osu-getseasonal.php", (HttpContext context, SeasonalRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/web/osu-rate.php", (HttpContext context, RatingRouteHandler handler) => handler.HandleAsync(context));

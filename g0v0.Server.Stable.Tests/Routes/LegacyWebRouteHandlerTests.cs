@@ -27,7 +27,7 @@ using Beatmap = g0v0.Server.Common.Database.Models.Beatmap;
 
 namespace g0v0.Server.Stable.Tests.Routes;
 
-public class LegacyWebRouteHandlerTests
+public partial class LegacyWebRouteHandlerTests
 {
     private const string Password = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     private const string Checksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";

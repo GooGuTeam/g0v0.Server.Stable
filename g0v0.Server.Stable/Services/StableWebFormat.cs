@@ -7,6 +7,8 @@ using osu.Game.Beatmaps.Legacy;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
+using Beatmap = g0v0.Server.Common.Database.Models.Beatmap;
+using BeatmapSet = g0v0.Server.Common.Database.Models.BeatmapSet;
 using Score = g0v0.Server.Common.Database.Models.Score;
 
 namespace g0v0.Server.Stable.Services;
@@ -22,7 +24,7 @@ namespace g0v0.Server.Stable.Services;
 public static class StableWebFormat
 {
     /// <summary>
-    /// Converts the stored beatmap status to the numeric status the stable client expects.
+    /// Converts the stored beatmap status to the leaderboard and beatmap-info wire value.
     /// </summary>
     /// <param name="status">The stored online status.</param>
     /// <returns>The client-facing status value.</returns>
@@ -129,6 +131,37 @@ public static class StableWebFormat
     /// <returns>The pipe-delimited pair.</returns>
     public static string ChartEntry(string name, object? before, object? after) =>
         string.Create(CultureInfo.InvariantCulture, $"{name}Before:{FormatValue(before)}|{name}After:{FormatValue(after)}");
+
+    /// <summary>
+    /// Formats a set record for osu!direct search or set lookup.
+    /// </summary>
+    /// <param name="set">The beatmap set and its difficulties.</param>
+    /// <param name="includeDifficulties">Whether to append the difficulty summaries used by search.</param>
+    /// <returns>The pipe-delimited record with 14 search fields or 13 lookup fields.</returns>
+    /// <remarks>osu!direct uses API status values, rather than the shifted values from <see cref="ToRankStatus"/>.</remarks>
+    public static string FormatDirectSet(BeatmapSet set, bool includeDifficulties)
+    {
+        ArgumentNullException.ThrowIfNull(set);
+        string updated = set.LastUpdatedDate?.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) ?? string.Empty;
+
+        // Direct uses osu! API status values, unlike the shifted status in leaderboard responses.
+        string record = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{set.Id}.osz|{CleanDirectText(set.Artist)}|{CleanDirectText(set.Title)}|{CleanDirectText(set.Creator)}|{(int)set.Status}|10.0|{updated}|{set.Id}|0|{(set.HasVideo ? 1 : 0)}|{(set.HasStoryboard ? 1 : 0)}|0|0");
+        return includeDifficulties
+            ? record + "|" + string.Join(',', set.Beatmaps.OrderBy(map => map.DifficultyRating).ThenBy(map => map.Id).Select(FormatDirectDifficulty))
+            : record;
+    }
+
+    private static string FormatDirectDifficulty(Beatmap map)
+    {
+        string name = CleanDirectText(map.Version).Replace(',', '，').Replace('@', '＠');
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"[{map.DifficultyRating:0.00}⭐] {name} {{cs: {map.CircleSize:0.##} / od: {map.OverallDifficulty:0.##} / ar: {map.ApproachRate:0.##} / hp: {map.HpDrainRate:0.##}}}@{map.Mode}");
+    }
+
+    private static string CleanDirectText(string value) => value.Replace('|', 'I').Replace('\r', ' ').Replace('\n', ' ');
 
     private static string FormatValue(object? value) => value switch
     {
