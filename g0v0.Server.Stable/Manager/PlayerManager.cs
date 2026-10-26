@@ -10,7 +10,7 @@ namespace g0v0.Server.Stable.Manager;
 /// <summary>
 /// Maintains session indexes and spectator relationships atomically.
 /// </summary>
-public class PlayerManager : IPlayerManager
+public partial class PlayerManager : IPlayerManager
 {
     private readonly Lock _lock = new();
     private readonly Dictionary<string, IPlayer> _playersByToken = new(StringComparer.Ordinal);
@@ -157,7 +157,7 @@ public class PlayerManager : IPlayerManager
                 return;
             }
 
-            StopWatching(source);
+            StopWatching(source, updateSourceChannel: false);
             _spectating.Add(source, target);
             if (!_spectators.TryGetValue(target, out HashSet<IPlayer>? watchers))
             {
@@ -173,6 +173,8 @@ public class PlayerManager : IPlayerManager
 
             watchers.Add(source);
             target.OnWatched(source);
+            UpdateSpectatorChannel(source);
+            UpdateSpectatorChannel(target);
         }
     }
 
@@ -329,7 +331,7 @@ public class PlayerManager : IPlayerManager
         }
     }
 
-    private bool StopWatching(IPlayer source)
+    private bool StopWatching(IPlayer source, bool updateSourceChannel = true)
     {
         if (!_spectating.Remove(source, out IPlayer? target))
         {
@@ -347,8 +349,15 @@ public class PlayerManager : IPlayerManager
         if (watchers.Count == 0)
         {
             _spectators.Remove(target);
+            _spectatorChannels.Remove(target);
         }
 
+        if (updateSourceChannel)
+        {
+            UpdateSpectatorChannel(source);
+        }
+
+        UpdateSpectatorChannel(target);
         return true;
     }
 }

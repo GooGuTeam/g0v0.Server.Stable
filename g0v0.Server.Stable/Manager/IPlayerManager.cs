@@ -1,5 +1,6 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
+using g0v0.Server.Stable.Objects.Chats;
 using g0v0.Server.Stable.Objects.Players;
 using g0v0.Server.Stable.Objects.States;
 using osu.Game.Beatmaps.Legacy;
@@ -100,6 +101,19 @@ public interface IPlayerManager
     /// <param name="player">The broadcasting session.</param>
     /// <param name="data">The frame bundle payload.</param>
     void BroadcastUserSentFrames(IPlayer player, byte[] data);
+
+    /// <summary>Gets the private channel this session is allowed to join.</summary>
+    /// <param name="player">The exact registered session.</param>
+    /// <returns>The current host's channel, or null without a spectator relationship.</returns>
+    StableChannel? GetSpectatorChannel(IPlayer player);
+
+    /// <summary>Rejoins the current spectator channel and queues its join acknowledgement.</summary>
+    /// <param name="player">The exact registered session.</param>
+    void JoinSpectatorChannel(IPlayer player);
+
+    /// <summary>Closes the spectator chat tab without stopping replay playback.</summary>
+    /// <param name="player">The exact session leaving chat.</param>
+    void LeaveSpectatorChannel(IPlayer player);
 
     /// <summary>
     /// Notifies a spectator's current host and fellow spectators about a playback failure.

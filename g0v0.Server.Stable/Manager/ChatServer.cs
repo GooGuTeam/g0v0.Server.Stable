@@ -74,6 +74,7 @@ public class ChatServer(
     public Task DisconnectAsync(IPlayer player)
     {
         ArgumentNullException.ThrowIfNull(player);
+        players.LeaveSpectatorChannel(player);
         List<string> left = [];
         foreach (StableChannel channel in GetChannels().Where(channel => channel.Remove(player)))
         {
@@ -93,12 +94,16 @@ public class ChatServer(
     public async Task<IPacket[]> JoinChannelAsync(IPlayer player, string channelName)
     {
         ArgumentNullException.ThrowIfNull(player);
-        StableChannel? channel = string.Equals(channelName, "#multiplayer", StringComparison.Ordinal)
-            ? _multiplayer.GetValueOrDefault(player)
-            : FindChannel(await EnsureChannelsAsync().ConfigureAwait(false), channelName);
+        StableChannel? channel = await ResolveChannelAsync(player, channelName).ConfigureAwait(false);
         if (channel is null)
         {
             logger.LogDebug("Session {UserId} tried to join unknown channel {Channel}.", player.Id, channelName);
+            return [];
+        }
+
+        if (string.Equals(channelName, "#spectator", StringComparison.Ordinal))
+        {
+            players.JoinSpectatorChannel(player);
             return [];
         }
 
@@ -123,14 +128,18 @@ public class ChatServer(
     public async Task<IPacket[]> LeaveChannelAsync(IPlayer player, string channelName)
     {
         ArgumentNullException.ThrowIfNull(player);
+        if (string.Equals(channelName, "#spectator", StringComparison.Ordinal))
+        {
+            players.LeaveSpectatorChannel(player);
+            return [];
+        }
+
         if (string.Equals(channelName, "#multiplayer", StringComparison.Ordinal))
         {
             return [];
         }
 
-        StableChannel? channel = string.Equals(channelName, "#multiplayer", StringComparison.Ordinal)
-            ? _multiplayer.GetValueOrDefault(player)
-            : FindChannel(await EnsureChannelsAsync().ConfigureAwait(false), channelName);
+        StableChannel? channel = await ResolveChannelAsync(player, channelName).ConfigureAwait(false);
         if (channel is null || !channel.Remove(player))
         {
             return [];
@@ -146,9 +155,7 @@ public class ChatServer(
     public async Task<IPacket[]> SendChannelMessageAsync(IPlayer player, string channelName, string text)
     {
         ArgumentNullException.ThrowIfNull(player);
-        StableChannel? channel = string.Equals(channelName, "#multiplayer", StringComparison.Ordinal)
-            ? _multiplayer.GetValueOrDefault(player)
-            : FindChannel(await EnsureChannelsAsync().ConfigureAwait(false), channelName);
+        StableChannel? channel = await ResolveChannelAsync(player, channelName).ConfigureAwait(false);
         if (channel is null || !channel.Contains(player))
         {
             logger.LogDebug("Session {UserId} wrote to {Channel} without being a member.", player.Id, channelName);
@@ -270,6 +277,11 @@ public class ChatServer(
     {
         ArgumentNullException.ThrowIfNull(player);
         IEnumerable<StableChannel> channels = GetChannels().Where(channel => channel.Contains(player));
+        if (players.GetSpectatorChannel(player) is { } spectatorChannel && spectatorChannel.Contains(player))
+        {
+            channels = channels.Append(spectatorChannel);
+        }
+
         return _multiplayer.TryGetValue(player, out StableChannel? roomChannel)
             ? channels.Append(roomChannel).ToArray()
             : channels.ToArray();
@@ -432,7 +444,7 @@ public class ChatServer(
             HashSet<string> names = new(StringComparer.Ordinal);
             foreach (ChatChannel channel in stored)
             {
-                if (NormalizeName(channel.Name) is not { } name || !names.Add(name))
+                if (NormalizeName(channel.Name) is not { } name || name is "#spectator" or "#multiplayer" || !names.Add(name))
                 {
                     continue;
                 }
@@ -506,5 +518,15 @@ public class ChatServer(
         {
             other.Enqueue(packet);
         }
+    }
+
+    private async Task<StableChannel?> ResolveChannelAsync(IPlayer player, string channelName)
+    {
+        return channelName switch
+        {
+            "#multiplayer" => _multiplayer.GetValueOrDefault(player),
+            "#spectator" => players.GetSpectatorChannel(player),
+            _ => FindChannel(await EnsureChannelsAsync().ConfigureAwait(false), channelName)
+        };
     }
 }
