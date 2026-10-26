@@ -70,6 +70,9 @@ public class Player : IPlayer
     }
 
     /// <inheritdoc />
+    public string? AwayMessage { get; set; }
+
+    /// <inheritdoc />
     public bool IsTourneyClient { get; }
 
     /// <summary>

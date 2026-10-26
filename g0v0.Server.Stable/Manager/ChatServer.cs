@@ -237,6 +237,21 @@ public class ChatServer(
                 SenderId = player.Id
             }
         });
+
+        if (target.Activity.Action == UserAction.Afk && target.AwayMessage is { Length: > 0 } awayMessage)
+        {
+            response.Add(new PacketSendMessage
+            {
+                Message = new Message
+                {
+                    Sender = target.Name,
+                    Text = awayMessage,
+                    Recipient = player.Name,
+                    SenderId = target.Id
+                }
+            });
+        }
+
         logger.LogInformation("Session {UserId} sent a private message to {RecipientId}.", player.Id, target.Id);
         return response.ToArray();
     }

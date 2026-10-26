@@ -28,6 +28,11 @@ public interface IPlayer
     Activity Activity { get; set; }
 
     /// <summary>
+    /// Gets or sets the automatic private-message reply used while this session is away.
+    /// </summary>
+    string? AwayMessage { get; set; }
+
+    /// <summary>
     /// Gets a value indicating whether this is a tournament client session.
     /// </summary>
     bool IsTourneyClient { get; }
