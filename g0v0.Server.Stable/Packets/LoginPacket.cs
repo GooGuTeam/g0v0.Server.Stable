@@ -1,7 +1,6 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
 using System.Globalization;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace g0v0.Server.Stable.Packets;
@@ -20,10 +19,10 @@ namespace g0v0.Server.Stable.Packets;
 /// &lt;version&gt;|&lt;utc offset&gt;|&lt;display city&gt;|&lt;client hashes&gt;|&lt;pm private&gt;\n
 /// </code>
 /// <para>
-/// The fourth field is itself a colon-terminated list of five hashes:
+/// The fourth field is the original colon-terminated client hash (ch) with five fields:
 /// </para>
 /// <code>
-/// &lt;osu! path md5&gt;:&lt;adapters&gt;:&lt;adapters md5&gt;:&lt;uninstall md5&gt;:&lt;disk signature md5&gt;:
+/// &lt;osu! path md5&gt;:&lt;adapters&gt;:&lt;adapters md5&gt;:&lt;installation guid double md5&gt;:&lt;disk signature double md5&gt;:
 /// </code>
 /// <para>
 /// <c>&lt;adapters&gt;</c> is a dot-terminated adapter list, or the literal
@@ -103,12 +102,12 @@ public sealed class LoginPacket
     public string AdaptersMd5 { get; private init; } = string.Empty;
 
     /// <summary>
-    /// Gets the uninstall identifier hash.
+    /// Gets the MD5 of the client's already MD5-hashed installation GUID.
     /// </summary>
     public string UninstallMd5 { get; private init; } = string.Empty;
 
     /// <summary>
-    /// Gets the disk signature hash.
+    /// Gets the MD5 of the client's already MD5-hashed disk identifier.
     /// </summary>
     public string DiskSignatureMd5 { get; private init; } = string.Empty;
 
@@ -214,12 +213,10 @@ public sealed class LoginPacket
     }
 
     /// <summary>
-    /// Computes a versioned SHA-256 device fingerprint from Wine, adapter and disk hashes.
+    /// Returns the original five-field client hash (ch) used to identify this device.
     /// </summary>
-    /// <returns>A lowercase 64-character hexadecimal SHA-256 hash.</returns>
+    /// <returns>The client-supplied hashes and adapter string, including the trailing colon.</returns>
+    /// <remarks>The client has already hashed each identifier; preserve its text without further hashing or normalization.</remarks>
     public string GetDeviceHash()
-    {
-        string canonical = $"stable:v1\n{(RunningUnderWine ? "1" : "0")}\n{AdaptersMd5.ToLowerInvariant()}\n{DiskSignatureMd5.ToLowerInvariant()}";
-        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
-    }
+        => $"{OsuPathMd5}:{AdaptersString}:{AdaptersMd5}:{UninstallMd5}:{DiskSignatureMd5}:";
 }

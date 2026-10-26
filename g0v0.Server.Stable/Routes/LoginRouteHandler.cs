@@ -74,7 +74,6 @@ public class LoginRouteHandler(
 {
     private const int ProtocolVersion = 19;
 
-    private readonly GeneralConfig _general = configs.Get<GeneralConfig>();
     private readonly VerificationConfig _verification = configs.Get<VerificationConfig>();
 
     /// <inheritdoc />
@@ -193,12 +192,10 @@ public class LoginRouteHandler(
 
         if (!verified)
         {
-            string url = $"{_general.WebUrl}client-verifications/create?ch={deviceHash}";
-            return Failure(
-                context,
-                "verification-required",
-                LoginFailureReason.RequiresVerification,
-                $"Device verification required. [{url} Click here to verify your device], then log in again.");
+            context.Response.Headers["cho-token"] = "verification-required";
+            return Results.Bytes(
+                PacketConvert.SerializeAll([new PacketUserId(LoginFailureReason.RequiresVerification)]),
+                contentType: "application/octet-stream");
         }
 
         Player player = new(user.Id, players, isTourneyClient: tourney)

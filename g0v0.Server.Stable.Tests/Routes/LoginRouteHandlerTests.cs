@@ -30,7 +30,6 @@ public class LoginRouteHandlerTests
     private PlayerManager _players = null!;
     private string _configPath = null!;
     private ConfigManager _configs = null!;
-    private GeneralConfig _general = null!;
     private VerificationConfig _verification = null!;
     private User _user = null!;
     private TrustedDevice? _device;
@@ -45,14 +44,11 @@ public class LoginRouteHandlerTests
             .AddScoped(_ => chatRepository.Object)
             .BuildServiceProvider();
         _players = new PlayerManager();
-        _general = new GeneralConfig { FrontendUrl = "https://frontend.test/" };
         _verification = new VerificationConfig();
         _configPath = Path.Combine(Path.GetTempPath(), "stable-login-config-" + Guid.NewGuid());
         Directory.CreateDirectory(Path.Combine(_configPath, "config"));
-        File.WriteAllText(Path.Combine(_configPath, "config", "general.json"), Newtonsoft.Json.JsonConvert.SerializeObject(_general));
         File.WriteAllText(Path.Combine(_configPath, "config", "verification.json"), Newtonsoft.Json.JsonConvert.SerializeObject(_verification));
         _configs = new ConfigManager(_configPath);
-        _general = _configs.Get<GeneralConfig>();
         _verification = _configs.Get<VerificationConfig>();
         _user = new User { Id = 1, Username = "alice" };
         _device = null;
@@ -85,20 +81,29 @@ public class LoginRouteHandlerTests
         Directory.Delete(_configPath, recursive: true);
     }
 
-    [Test]
-    public async Task NewDeviceIsRecordedButCannotEnterTheOnlinePlayerManager()
+    [TestCase("001122334455.AABBCCDDEEFF.")]
+    [TestCase("runningunderwine")]
+    public async Task NewDeviceIsRecordedButCannotEnterTheOnlinePlayerManager(string adapters)
     {
-        DefaultHttpContext context = await login();
+        string clientHash = $"0123456789abcdef0123456789ABCDEF:{adapters}:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:abcdef0123456789ABCDEF0123456789:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:";
+        string data = $"alice\n{PasswordMd5}\nb20261024|8|1|{clientHash}|1\n";
+        DefaultHttpContext context = await login(data);
         Assert.That(context.Response.StatusCode, Is.EqualTo(200));
         Assert.That(context.Response.Headers["cho-token"].ToString(), Is.EqualTo("verification-required"));
         Assert.That(_players.GetAllPlayers(), Is.Empty);
         Assert.That(_session!.IsVerified, Is.False);
-        Assert.That(_session.DeviceHash, Is.EqualTo(LoginPacket.Parse(body()).GetDeviceHash()));
-        Assert.That(_device!.ClientType, Is.EqualTo("stable"));
+        Assert.That(_session.DeviceHash, Is.EqualTo(clientHash));
+        Assert.That(_device!.DeviceHash, Is.EqualTo(clientHash));
+        Assert.That(_device.ClientType, Is.EqualTo("stable"));
         Assert.That(_device.ExpiresAt, Is.Null);
         Assert.That(_audit!.LoginMethod, Is.EqualTo("stable_pending_verification"));
-        string wire = Encoding.UTF8.GetString(((MemoryStream)context.Response.Body).ToArray());
-        Assert.That(wire, Does.Contain($"[https://frontend.test/client-verifications/create?ch={_session.DeviceHash} Click here"));
+        using MemoryStream response = new(((MemoryStream)context.Response.Body).ToArray());
+        IPacket[] packets = PacketConvert.DeserializeAll(response, new PacketFacade());
+        Assert.That(packets, Has.Length.EqualTo(1));
+        Assert.That(packets[0], Is.TypeOf<PacketUserId>());
+        Assert.That(((PacketUserId)packets[0]).UserId, Is.EqualTo((int)LoginFailureReason.RequiresVerification));
+        _logins.Verify(logins => logins.GetDeviceAsync(1, "stable", clientHash, It.IsAny<CancellationToken>()), Times.Once);
+        _logins.Verify(logins => logins.GetSessionAsync(1, "stable", clientHash, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -226,19 +231,6 @@ public class LoginRouteHandlerTests
         await login();
         Assert.That(_players.GetPlayer(1), Is.Not.SameAs(previous));
         Assert.That(_session!.IsVerified, Is.True);
-    }
-
-    [Test]
-    public void DeviceHashIsCanonicalAndChangesWithWineOrHardware()
-    {
-        string original = LoginPacket.Parse(body()).GetDeviceHash();
-        string upper = LoginPacket.Parse(body().Replace(new string('a', 32), new string('A', 32), StringComparison.Ordinal)).GetDeviceHash();
-        string wine = LoginPacket.Parse(body().Replace("adapter.", "runningunderwine", StringComparison.Ordinal)).GetDeviceHash();
-        string disk = LoginPacket.Parse(body().Replace(new string('b', 32), new string('c', 32), StringComparison.Ordinal)).GetDeviceHash();
-        Assert.That(original, Has.Length.EqualTo(64));
-        Assert.That(upper, Is.EqualTo(original));
-        Assert.That(wine, Is.Not.EqualTo(original));
-        Assert.That(disk, Is.Not.EqualTo(original));
     }
 
     private static string body() => $"alice\n{PasswordMd5}\nb20261024|8|1|path:adapter.:{new string('a', 32)}:uninstall:{new string('b', 32)}:|1\n";
