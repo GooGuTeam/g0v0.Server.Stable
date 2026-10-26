@@ -117,6 +117,7 @@ public static class Program
         builder.Services.AddScoped<DifficultyRatingRouteHandler>();
         builder.Services.AddScoped<BeatmapDownloadRouteHandler>();
         builder.Services.AddScoped<BeatmapFileRouteHandler>();
+        builder.Services.AddScoped<CallPeppyRouteHandler>();
     }
 
     /// <summary>
@@ -152,6 +153,7 @@ public static class Program
         app.MapPost("/difficulty-rating", (HttpContext context, DifficultyRatingRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/d/{map_set_id}", (HttpContext context, BeatmapDownloadRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/web/maps/{map_filename}", (HttpContext context, BeatmapFileRouteHandler handler) => handler.HandleAsync(context));
+        app.MapGet("/p/doyoureallywanttoaskpeppy", (HttpContext context, CallPeppyRouteHandler handler) => handler.HandleAsync(context));
 
         return app;
     }
