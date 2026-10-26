@@ -30,6 +30,8 @@ public class RoomManagerTests
     private readonly HashSet<(long Room, int User)> _participants = [];
     private Mock<IRoomRepository> _repository = null!;
     private Mock<IChatRepository> _chatRepository = null!;
+    private Mock<IUserRepository> _users = null!;
+    private Mock<IRelationshipRepository> _relationships = null!;
     private ServiceProvider _services = null!;
     private PlayerManager _players = null!;
     private RoomManager _rooms = null!;
@@ -67,7 +69,11 @@ public class RoomManagerTests
         Mock<IBeatmapRepository> beatmaps = new();
         beatmaps.Setup(repository => repository.GetByChecksumAsync(FirstChecksum)).ReturnsAsync(new Beatmap { Id = 11, Checksum = FirstChecksum });
         beatmaps.Setup(repository => repository.GetByChecksumAsync(SecondChecksum)).ReturnsAsync(new Beatmap { Id = 22, Checksum = SecondChecksum });
+        _users = new Mock<IUserRepository>();
+        _users.Setup(repository => repository.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((int id) => new User { Id = id, Username = $"user{id}" });
+        _relationships = new Mock<IRelationshipRepository>();
         _services = new ServiceCollection().AddSingleton(_repository.Object).AddSingleton(_chatRepository.Object)
+            .AddSingleton(_users.Object).AddSingleton(_relationships.Object)
             .AddSingleton(beatmaps.Object).BuildServiceProvider();
         IServiceScopeFactory scopes = _services.GetRequiredService<IServiceScopeFactory>();
         _players = new PlayerManager();
@@ -497,6 +503,60 @@ public class RoomManagerTests
         ServerPackets.PacketMatchInvite invite = Packets(invitee).OfType<ServerPackets.PacketMatchInvite>().Single();
         Assert.That(invite.Message.SenderId, Is.EqualTo(guest.Id));
         Assert.That(invite.Message.Text, Does.Contain("new%20secret"));
+    }
+
+    [TestCase(false, false, false)]
+    [TestCase(true, false, false)]
+    [TestCase(false, true, true)]
+    public async Task InvitationsRespectTheRecipientsFriendsOnlyPreference(bool senderFollows, bool recipientFollows, bool allowed)
+    {
+        Player host = Player(1);
+        Player invitee = Player(2);
+        await CreateAsync(host);
+        _users.Setup(repository => repository.GetByIdAsync(2)).ReturnsAsync(new User { Id = 2, Username = "user2", PmFriendsOnly = true });
+        _relationships.Setup(repository => repository.IsFollowingAsync(1, 2)).ReturnsAsync(senderFollows);
+        _relationships.Setup(repository => repository.IsFollowingAsync(2, 1)).ReturnsAsync(recipientFollows);
+        ClearQueues();
+
+        await SendAsync(host, new PacketMatchInvite { UserId = invitee.Id });
+
+        Assert.That(Packets(invitee).OfType<ServerPackets.PacketMatchInvite>().Count(), Is.EqualTo(allowed ? 1 : 0));
+        Assert.That(Packets(host).OfType<ServerPackets.PacketUserDmBlocked>().Count(), Is.EqualTo(allowed ? 0 : 1));
+    }
+
+    [TestCase(1, 2)]
+    [TestCase(2, 1)]
+    public async Task InvitationsRespectBlocksInEitherDirection(int blocker, int blocked)
+    {
+        Player host = Player(1);
+        Player invitee = Player(2);
+        await CreateAsync(host);
+        _relationships.Setup(repository => repository.IsFollowingAsync(It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(value: true);
+        _relationships.Setup(repository => repository.IsBlockedAsync(blocker, blocked)).ReturnsAsync(value: true);
+        ClearQueues();
+
+        await SendAsync(host, new PacketMatchInvite { UserId = invitee.Id });
+
+        Assert.That(Packets(invitee), Is.Empty);
+        Assert.That(Packets(host).Single(), Is.TypeOf<ServerPackets.PacketUserDmBlocked>());
+    }
+
+    [Test]
+    public async Task InvitationsRespectTheSendersOwnFriendsOnlyPreference()
+    {
+        Player host = Player(1);
+        Player invitee = Player(2);
+        await CreateAsync(host);
+        _users.Setup(repository => repository.GetByIdAsync(1)).ReturnsAsync(new User { Id = 1, Username = "user1", PmFriendsOnly = true });
+        ClearQueues();
+
+        await SendAsync(host, new PacketMatchInvite { UserId = invitee.Id });
+
+        Assert.That(Packets(invitee), Is.Empty);
+        Assert.That(Packets(host).Single(), Is.TypeOf<ServerPackets.PacketNotification>());
+        _relationships.Setup(repository => repository.IsFollowingAsync(1, 2)).ReturnsAsync(value: true);
+        await SendAsync(host, new PacketMatchInvite { UserId = invitee.Id });
+        Assert.That(Packets(invitee).Single(), Is.TypeOf<ServerPackets.PacketMatchInvite>());
     }
 
     [Test]

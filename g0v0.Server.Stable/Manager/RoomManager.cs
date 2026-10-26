@@ -10,6 +10,7 @@ using g0v0.Server.Stable.Objects.Players;
 using g0v0.Server.Stable.Objects.Rooms;
 using g0v0.Server.Stable.Packets;
 using g0v0.Server.Stable.Packets.Server;
+using g0v0.Server.Stable.Services;
 using osu.Game.Online.Multiplayer;
 using DatabaseRoom = g0v0.Server.Common.Database.Models.Room;
 using StableRoom = g0v0.Server.Stable.Objects.Rooms.Room;
@@ -378,12 +379,18 @@ public sealed class RoomManager : IRoomManager, IDisposable
     /// <inheritdoc/>
     public Task InviteAsync(IPlayer player, int userId)
     {
-        return ExecuteAsync(player, room =>
+        return ExecuteAsync(player, async room =>
         {
             IPlayer? target = _players.GetPlayer(userId);
-            if (target is not { IsRestricted: false } || ReferenceEquals(target, player))
+            if (target is not { IsRestricted: false } || target.Id == player.Id)
             {
-                return Task.CompletedTask;
+                return;
+            }
+
+            if (await PrivateMessagePolicy.CheckAsync(player, target, _scopes).ConfigureAwait(false) is { } rejection)
+            {
+                player.Enqueue(rejection);
+                return;
             }
 
             Match match = room.GetMatch(includePassword: true);
@@ -398,8 +405,6 @@ public sealed class RoomManager : IRoomManager, IDisposable
                     Text = $"Come join my multiplayer match: [{link} {match.Name}]",
                 },
             });
-
-            return Task.CompletedTask;
         });
     }
 

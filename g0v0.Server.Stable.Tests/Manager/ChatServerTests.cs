@@ -15,22 +15,38 @@ using osu.Game.Online.Chat;
 
 namespace g0v0.Server.Stable.Tests.Manager;
 
-public class ChatServerTests
+public partial class ChatServerTests
 {
     private ServiceProvider _services = null!;
     private PlayerManager _players = null!;
     private ChatServer _chats = null!;
     private Player _alice = null!;
     private Player _bob = null!;
+    private User _aliceUser = null!;
+    private User _bobUser = null!;
+    private Mock<IUserRepository> _users = null!;
+    private Mock<IRelationshipRepository> _relationships = null!;
+    private Mock<IChatRepository> _messages = null!;
 
     [SetUp]
     public void SetUp()
     {
+        _aliceUser = new User { Id = 1, Username = "alice" };
+        _bobUser = new User { Id = 2, Username = "bob" };
+        _users = new Mock<IUserRepository>();
+        _users.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(_aliceUser);
+        _users.Setup(repo => repo.GetByIdAsync(2)).ReturnsAsync(_bobUser);
+        _relationships = new Mock<IRelationshipRepository>();
+        _messages = Mock.Get(DefaultRepository());
+        _messages.Setup(repo => repo.GetOrCreatePmChannelAsync(1, 2))
+            .ReturnsAsync(new ChatChannel { ChannelId = 3, Name = "pm_1_2" });
         _services = new ServiceCollection().AddLogging()
-            .AddScoped(_ => defaultRepository())
+            .AddSingleton(_users.Object)
+            .AddSingleton(_relationships.Object)
+            .AddSingleton(_messages.Object)
             .BuildServiceProvider();
         _players = new PlayerManager();
-        _chats = createChatServer();
+        _chats = CreateChatServer();
         _alice = new Player(1, "alice-token") { Name = "alice" };
         _bob = new Player(2, "bob-token") { Name = "bob" };
         _players.AddPlayer(_alice);
@@ -52,19 +68,19 @@ public class ChatServerTests
         Assert.That(packets[^1], Is.TypeOf<PacketChannelInfoEnd>());
         Assert.That(
             packets.OfType<PacketChannelInfo>().Select(packet => packet.Channel.Name),
-            Is.EqualTo(new[] { "#osu", "#announce" }));
+            Is.EqualTo((string[])["#osu", "#announce"]));
     }
 
     [Test]
     public async Task DirectoryIsEmptyWhenTheStorageHasNoPublicChannel()
     {
-        _services.Dispose();
+        await _services.DisposeAsync();
         Mock<IChatRepository> repository = new();
         repository.Setup(repo => repo.GetPublicChannelsAsync()).ReturnsAsync([]);
         _services = new ServiceCollection().AddLogging()
             .AddScoped(_ => repository.Object)
             .BuildServiceProvider();
-        _chats = createChatServer();
+        _chats = CreateChatServer();
 
         IPacket[] packets = await _chats.ConnectAsync(_alice);
 
@@ -85,7 +101,7 @@ public class ChatServerTests
 
         // bob was never in the channel but still learns the member count.
         Assert.That(PacketConvert.DeserializeAll(new MemoryStream(_bob.Dequeue()), new PacketFacade()), Has.Length.EqualTo(1));
-        Assert.That(_chats.GetPlayerChannels(_alice).Select(channel => channel.Name), Is.EqualTo(new[] { "#osu" }));
+        Assert.That(_chats.GetPlayerChannels(_alice).Select(channel => channel.Name), Is.EqualTo((string[])["#osu"]));
     }
 
     [Test]
@@ -208,7 +224,7 @@ public class ChatServerTests
         await _chats.DisconnectAsync(_alice);
 
         Assert.That(_chats.GetPlayerChannels(_alice), Is.Empty);
-        Assert.That(_chats.GetChannels().Select(channel => channel.Count), Is.EqualTo(new[] { 0, 0 }));
+        Assert.That(_chats.GetChannels().Select(channel => channel.Count), Is.EqualTo((int[])[0, 0]));
     }
 
     [Test]
@@ -216,11 +232,11 @@ public class ChatServerTests
     {
         await _chats.ConnectAsync(_alice);
         IReadOnlyList<StableChannel> channels = _chats.GetChannels();
-        Assert.That(channels.Select(channel => channel.Name), Is.EqualTo(new[] { "#osu", "#announce" }));
+        Assert.That(channels.Select(channel => channel.Name), Is.EqualTo((string[])["#osu", "#announce"]));
         Assert.That(channels[0].ChannelId, Is.EqualTo(1));
     }
 
-    private static IChatRepository defaultRepository()
+    private static IChatRepository DefaultRepository()
     {
         Mock<IChatRepository> repository = new();
         repository.Setup(repo => repo.GetPublicChannelsAsync())
@@ -233,7 +249,7 @@ public class ChatServerTests
         return repository.Object;
     }
 
-    private ChatServer createChatServer() => new(
+    private ChatServer CreateChatServer() => new(
         NullLogger<ChatServer>.Instance,
         _services.GetRequiredService<IServiceScopeFactory>(),
         _players);

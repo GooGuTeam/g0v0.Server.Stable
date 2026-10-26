@@ -8,6 +8,7 @@ using g0v0.Server.Stable.Objects.Chats;
 using g0v0.Server.Stable.Objects.Players;
 using g0v0.Server.Stable.Packets;
 using g0v0.Server.Stable.Packets.Server;
+using g0v0.Server.Stable.Services;
 
 namespace g0v0.Server.Stable.Manager;
 
@@ -206,7 +207,7 @@ public class ChatServer(
 
         IPlayer? target = players.GetAllPlayers()
             .FirstOrDefault(other => string.Equals(other.Name, recipientName, StringComparison.OrdinalIgnoreCase));
-        if (target is null || ReferenceEquals(target, player))
+        if (target is null || target.Id == player.Id)
         {
             logger.LogDebug("Session {UserId} tried to message offline user {Recipient}.", player.Id, recipientName);
             return [new PacketNotification { Message = $"{recipientName} is not online." }];
@@ -217,6 +218,11 @@ public class ChatServer(
         if (message.Length == 0)
         {
             return response.ToArray();
+        }
+
+        if (await PrivateMessagePolicy.CheckAsync(player, target, scopeFactory).ConfigureAwait(false) is { } rejection)
+        {
+            return [rejection];
         }
 
         await StorePrivateMessageAsync(player.Id, target.Id, message).ConfigureAwait(false);
