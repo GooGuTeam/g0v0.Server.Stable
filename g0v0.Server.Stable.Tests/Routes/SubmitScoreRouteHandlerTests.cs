@@ -2,6 +2,7 @@
 
 using System.Net.Http.Headers;
 using System.Text;
+using g0v0.Server.Common.Achievements;
 using g0v0.Server.Common.Configuration;
 using g0v0.Server.Common.Database.Models;
 using g0v0.Server.Common.Database.Repository;
@@ -21,7 +22,7 @@ using Moq;
 
 namespace g0v0.Server.Stable.Tests.Routes;
 
-public class SubmitScoreRouteHandlerTests
+public partial class SubmitScoreRouteHandlerTests
 {
     private const string Password = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
@@ -41,6 +42,7 @@ public class SubmitScoreRouteHandlerTests
     private byte[]? _uploaded;
     private Mock<IUserStatisticsRepository> _statistics = null!;
     private Mock<IScoreProcessingService> _processor = null!;
+    private Mock<IAchievementService> _achievements = null!;
 
     [SetUp]
     public void SetUp()
@@ -87,6 +89,8 @@ public class SubmitScoreRouteHandlerTests
             .ReturnsAsync(new UserStatistics { UserId = 1, Mode = 0 });
         _statistics.Setup(s => s.GetGlobalRankAsync(1, It.IsAny<int>())).ReturnsAsync(7);
         _processor = new Mock<IScoreProcessingService>();
+        _achievements = new Mock<IAchievementService>();
+        _achievements.Setup(service => service.UnlockAsync(It.IsAny<Score>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _handler = new SubmitScoreRouteHandler(
             new StableWebAuthenticator(_users.Object, _logins.Object),
             _scores.Object,
@@ -99,6 +103,7 @@ public class SubmitScoreRouteHandlerTests
             _submissions,
             _statistics.Object,
             _processor.Object,
+            _achievements.Object,
             _configs,
             NullLogger<SubmitScoreRouteHandler>.Instance);
     }

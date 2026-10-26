@@ -75,6 +75,7 @@ public class ScoreProcessingServiceTests
             Assert.That(score.ClassicTotalScoreWithoutMods, Is.EqualTo(mode >= 4 ? 0 : 1000000));
             Assert.That(score.MaximumStatistics.Values.Sum(), Is.GreaterThanOrEqualTo(4));
             Assert.That(score.Pp, passed ? Is.GreaterThan(0) : Is.Zero);
+            Assert.That(score.Processed, Is.True);
         });
         scores.Verify(s => s.CompleteProcessingAsync(score, It.IsAny<int>()), Times.Once);
     }

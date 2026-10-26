@@ -1,5 +1,6 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
+using g0v0.Server.Common.Achievements;
 using g0v0.Server.Common.Beatmaps;
 using g0v0.Server.Common.Communication;
 using g0v0.Server.Common.Configuration;
@@ -70,6 +71,7 @@ public static class Program
         builder.Services.AddCache();
         builder.Services.AddFetcher();
         builder.Services.AddBeatmapSearch();
+        builder.Services.AddAchievements();
         builder.Services.AddStorage();
         builder.Services.AddScoped<BeatmapFeedbackService>();
         builder.Services.AddScoped<BeatmapDownloadService>();
@@ -84,7 +86,11 @@ public static class Program
             provider.GetRequiredService<IServiceScopeFactory>(),
             provider.GetRequiredService<ILogger<ScoreProcessingQueue>>(),
             "stable",
-            (services, score, cancellationToken) => services.GetRequiredService<ScoreProcessingService>().ProcessAsync(score, cancellationToken),
+            async (services, score, cancellationToken) =>
+            {
+                await services.GetRequiredService<ScoreProcessingService>().ProcessAsync(score, cancellationToken).ConfigureAwait(false);
+                await services.GetRequiredService<IAchievementService>().UnlockAsync(score, cancellationToken).ConfigureAwait(false);
+            },
             score => !score.Passed || score.HasReplay));
         builder.Services.AddHostedService(provider => provider.GetRequiredService<ScoreProcessingQueue>());
 

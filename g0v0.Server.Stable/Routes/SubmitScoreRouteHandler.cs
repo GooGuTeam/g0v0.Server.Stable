@@ -1,6 +1,7 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
 using System.Globalization;
+using g0v0.Server.Common.Achievements;
 using g0v0.Server.Common.Configuration;
 using g0v0.Server.Common.Database.Models;
 using g0v0.Server.Common.Database.Repository;
@@ -80,6 +81,7 @@ namespace g0v0.Server.Stable.Routes;
 /// <param name="submissions">The score-side duplicate submission tracker.</param>
 /// <param name="statistics">Reads the personal statistics shown in the response charts.</param>
 /// <param name="processor">Calculates the score before responding, so the charts carry final values.</param>
+/// <param name="achievements">Evaluates and persists newly earned medals.</param>
 /// <param name="configs">The shared configuration manager.</param>
 /// <param name="logger">The logger.</param>
 public sealed class SubmitScoreRouteHandler(
@@ -94,6 +96,7 @@ public sealed class SubmitScoreRouteHandler(
     StableScoreSubmissionTracker submissions,
     IUserStatisticsRepository statistics,
     IScoreProcessingService processor,
+    IAchievementService achievements,
     ConfigManager configs,
     ILogger<SubmitScoreRouteHandler> logger) : IRouteHandler
 {
@@ -240,6 +243,23 @@ public sealed class SubmitScoreRouteHandler(
             queue.NotifyPendingScore();
         }
 
+        IReadOnlyList<Achievement> unlocked = [];
+        if (score.Processed)
+        {
+            try
+            {
+                unlocked = await achievements.UnlockAsync(score, context.RequestAborted).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, "Could not unlock achievements for stable score {ScoreId}.", score.Id);
+            }
+        }
+
         StatisticsSnapshot after = await SnapshotAsync(user.Id, score.Mode);
         int? beatmapRank = RankOrNull(await scores.GetBeatmapLeaderboardRankAsync(
             beatmap.Id,
@@ -256,7 +276,7 @@ public sealed class SubmitScoreRouteHandler(
             score.Pp,
             score.Rank,
             beatmapRank ?? 0);
-        return Results.Text(BuildResponse(score, beatmap, beatmapScores, previousBest, previousBeatmapRank, beatmapRank, before, after));
+        return Results.Text(BuildResponse(score, beatmap, beatmapScores, previousBest, previousBeatmapRank, beatmapRank, before, after, unlocked));
     }
 
     private static int? RankOrNull(int rank) => rank > 0 ? rank : null;
@@ -284,7 +304,8 @@ public sealed class SubmitScoreRouteHandler(
         int? previousBeatmapRank,
         int? beatmapRank,
         StatisticsSnapshot before,
-        StatisticsSnapshot after)
+        StatisticsSnapshot after,
+        IReadOnlyList<Achievement> unlockedAchievements)
     {
         long previousScore = previousBest?.ClassicTotalScore ?? 0;
         int previousCombo = previousBest?.MaxCombo ?? 0;
@@ -326,7 +347,7 @@ public sealed class SubmitScoreRouteHandler(
             StableWebFormat.ChartEntry("maxCombo", before.MaximumCombo, after.MaximumCombo),
             StableWebFormat.ChartEntry("accuracy", before.Accuracy, after.Accuracy),
             StableWebFormat.ChartEntry("pp", before.Pp, after.Pp),
-            "achievements-new:"
+            "achievements-new:" + StableWebFormat.FormatAchievements(unlockedAchievements)
         ];
 
         return string.Join('|', charts);

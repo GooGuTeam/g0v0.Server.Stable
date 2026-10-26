@@ -1,6 +1,7 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
 using System.Globalization;
+using g0v0.Server.Common.Achievements;
 using g0v0.Server.Common.Rulesets;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Legacy;
@@ -152,6 +153,17 @@ public static class StableWebFormat
             ? record + "|" + string.Join(',', set.Beatmaps.OrderBy(map => map.DifficultyRating).ThenBy(map => map.Id).Select(FormatDirectDifficulty))
             : record;
     }
+
+    /// <summary>Formats newly unlocked medals for the stable score response.</summary>
+    /// <param name="achievements">The medals unlocked by this submission.</param>
+    /// <returns>Slash-separated icon, name, and description triples.</returns>
+    public static string FormatAchievements(IEnumerable<Achievement> achievements)
+    {
+        ArgumentNullException.ThrowIfNull(achievements);
+        return string.Join('/', achievements.Select(achievement => $"{CleanAchievementText(achievement.Icon)}+{CleanAchievementText(achievement.Name)}+{CleanAchievementText(achievement.Description)}"));
+    }
+
+    private static string CleanAchievementText(string value) => CleanDirectText(value).Replace('+', ' ').Replace('/', ' ');
 
     private static string FormatDirectDifficulty(Beatmap map)
     {
