@@ -28,7 +28,7 @@ public sealed class ReplayRouteHandler(StableWebAuthenticator authenticator, Rep
             return Results.BadRequest();
         }
 
-        byte[]? replay = await replays.GetRawReplayAsync(scoreId, mode, context.RequestAborted).ConfigureAwait(false);
+        byte[]? replay = await replays.GetRawReplayAsync(scoreId, mode, user.Id, context.RequestAborted).ConfigureAwait(false);
         return replay is null ? Results.NotFound() : Results.Bytes(replay, "application/octet-stream");
     }
 }

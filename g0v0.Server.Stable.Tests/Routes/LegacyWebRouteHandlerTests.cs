@@ -4,6 +4,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using g0v0.Server.Common.Beatmaps;
+using g0v0.Server.Common.Caching;
 using g0v0.Server.Common.Configuration;
 using g0v0.Server.Common.Database.Models;
 using g0v0.Server.Common.Database.Repository;
@@ -39,6 +40,8 @@ public partial class LegacyWebRouteHandlerTests
     private Mock<IBeatmapSetRepository> _sets = null!;
     private Mock<IFetcher> _fetcher = null!;
     private Mock<IScoreRepository> _scores = null!;
+    private Mock<IUserStatisticsRepository> _statistics = null!;
+    private Mock<IStringCache> _replayViewLocks = null!;
     private Mock<IStorageService> _storage = null!;
     private Mock<IScreenshotRepository> _screenshots = null!;
     private Mock<IGeoIPService> _geoIp = null!;
@@ -59,6 +62,9 @@ public partial class LegacyWebRouteHandlerTests
         _sets = new Mock<IBeatmapSetRepository>();
         _fetcher = new Mock<IFetcher>();
         _scores = new Mock<IScoreRepository>();
+        _statistics = new Mock<IUserStatisticsRepository>();
+        _replayViewLocks = new Mock<IStringCache>();
+        _replayViewLocks.Setup(cache => cache.TrySetAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>())).ReturnsAsync(value: true);
         _storage = new Mock<IStorageService>();
         _screenshots = new Mock<IScreenshotRepository>();
         _geoIp = new Mock<IGeoIPService>();
@@ -106,7 +112,7 @@ public partial class LegacyWebRouteHandlerTests
             "favourites" => new FavouritesRouteHandler(_authenticator, _feedback.Object),
             "add" => new AddFavouriteRouteHandler(_authenticator, _feedbackService),
             "rating" => new RatingRouteHandler(_authenticator, _feedbackService),
-            "replay" => new ReplayRouteHandler(_authenticator, new ReplayService(_scores.Object, _storage.Object)),
+            "replay" => new ReplayRouteHandler(_authenticator, CreateReplayService()),
             _ => new ScreenshotRouteHandler(_authenticator, _screenshotService),
         };
         string body = await ExecuteAsync(handler, context);
@@ -215,7 +221,7 @@ public partial class LegacyWebRouteHandlerTests
         byte[] frames = [0x5d, 0, 0, 0x80, 0, 1, 2, 3, 4, 5, 6, 7, 8];
         ConfigureReplay(CreateReplay(frames));
         DefaultHttpContext context = Authenticated("&c=42&m=0");
-        await ExecuteAsync(new ReplayRouteHandler(_authenticator, new ReplayService(_scores.Object, _storage.Object)), context);
+        await ExecuteAsync(new ReplayRouteHandler(_authenticator, CreateReplayService()), context);
         Assert.That(context.Response.StatusCode, Is.EqualTo(200));
         Assert.That(((MemoryStream)context.Response.Body).ToArray(), Is.EqualTo(frames));
         Assert.That(context.Response.ContentType, Is.EqualTo("application/octet-stream"));
@@ -244,9 +250,10 @@ public partial class LegacyWebRouteHandlerTests
         }
 
         DefaultHttpContext context = Authenticated("&c=42&m=" + (string.Equals(failure, "mode", StringComparison.Ordinal) ? "1" : "0"));
-        string body = await ExecuteAsync(new ReplayRouteHandler(_authenticator, new ReplayService(_scores.Object, _storage.Object)), context);
+        string body = await ExecuteAsync(new ReplayRouteHandler(_authenticator, CreateReplayService()), context);
         Assert.That(context.Response.StatusCode, Is.EqualTo(404));
         Assert.That(body, Is.Empty);
+        _statistics.Verify(repository => repository.IncrementReplayViewsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -411,9 +418,12 @@ public partial class LegacyWebRouteHandlerTests
     private void SetRatingBeatmap(BeatmapOnlineStatus status)
         => _beatmaps.Setup(repository => repository.GetByChecksumAsync(Checksum)).ReturnsAsync(new Beatmap { Id = 2, BeatmapSetId = 42, Status = status });
 
+    private ReplayService CreateReplayService()
+        => new(_scores.Object, _storage.Object, _statistics.Object, _replayViewLocks.Object);
+
     private void ConfigureReplay(byte[] replay)
     {
-        _scores.Setup(repository => repository.GetByIdAsync(42)).ReturnsAsync(new Score { Id = 42, BeatmapId = 2, UserId = 1, HasReplay = true });
+        _scores.Setup(repository => repository.GetByIdAsync(42)).ReturnsAsync(new Score { Id = 42, BeatmapId = 2, UserId = 1, HasReplay = true, Type = "lazer" });
         _storage.Setup(storage => storage.IsExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(value: true);
         _storage.Setup(storage => storage.ReadFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(replay);
     }
