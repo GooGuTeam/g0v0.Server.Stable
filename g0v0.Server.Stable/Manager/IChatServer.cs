@@ -67,6 +67,12 @@ public interface IChatServer
     /// <returns>Packets for the sending session only, such as an "offline" notice.</returns>
     Task<IPacket[]> SendPrivateMessageAsync(IPlayer player, string recipientName, string text);
 
+    /// <summary>Broadcasts a server-generated BanchoBot message to one exact channel.</summary>
+    /// <param name="channel">The authorized destination channel.</param>
+    /// <param name="text">The reply, split using the configured message limit.</param>
+    /// <returns>A task representing delivery and persistence.</returns>
+    Task SendBotMessageAsync(StableChannel channel, string text);
+
     /// <summary>
     /// Gets the channels offered in the login directory.
     /// </summary>

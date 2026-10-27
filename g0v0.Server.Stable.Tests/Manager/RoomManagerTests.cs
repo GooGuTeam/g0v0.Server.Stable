@@ -10,6 +10,8 @@ using g0v0.Server.Stable.Objects.Players;
 using g0v0.Server.Stable.Objects.Rooms;
 using g0v0.Server.Stable.Packets;
 using g0v0.Server.Stable.Packets.Client;
+using g0v0.Server.Stable.Services;
+using g0v0.Server.Stable.Tests.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -22,7 +24,7 @@ using ServerPackets = g0v0.Server.Stable.Packets.Server;
 
 namespace g0v0.Server.Stable.Tests.Manager;
 
-public class RoomManagerTests
+public partial class RoomManagerTests
 {
     private const string FirstChecksum = "11111111111111111111111111111111";
     private const string SecondChecksum = "22222222222222222222222222222222";
@@ -37,12 +39,14 @@ public class RoomManagerTests
     private RoomManager _rooms = null!;
     private ChatServer _chat = null!;
     private PacketFacade _facade = null!;
+    private ManualTimeProvider _clock = null!;
     private long _nextRoomId;
     private long _nextItemId;
 
     [SetUp]
     public void SetUp()
     {
+        _clock = new ManualTimeProvider();
         _storedItems.Clear();
         _participants.Clear();
         _nextRoomId = 100000;
@@ -51,7 +55,7 @@ public class RoomManagerTests
         _repository.Setup(repository => repository.CreateRoom(It.IsAny<MultiplayerRoom>(), It.IsAny<int>(), It.IsAny<ServerIdentify>(), It.IsAny<G0V0RoomCategory>(), It.IsAny<bool>()))
             .ReturnsAsync((MultiplayerRoom room, int host, ServerIdentify source, G0V0RoomCategory category, bool _) =>
             {
-                DatabaseRoom stored = new() { Id = ++_nextRoomId, Name = room.Settings.Name, HostId = host, Password = room.Settings.Password, Category = category, Source = source };
+                DatabaseRoom stored = new() { Id = ++_nextRoomId, Name = room.Settings.Name, HostId = host, Password = room.Settings.Password, MaxParticipants = room.Settings.MaxParticipants, Category = category, Source = source };
                 return stored;
             });
         _repository.Setup(repository => repository.AddUserToRoom(It.IsAny<long>(), It.IsAny<int>()))
@@ -74,7 +78,10 @@ public class RoomManagerTests
         _relationships = new Mock<IRelationshipRepository>();
         _services = new ServiceCollection().AddSingleton(_repository.Object).AddSingleton(_chatRepository.Object)
             .AddSingleton(_users.Object).AddSingleton(_relationships.Object)
-            .AddSingleton(beatmaps.Object).BuildServiceProvider();
+            .AddSingleton(beatmaps.Object)
+            .AddSingleton(_ => new RoomCountdownService(_rooms, _chat, _clock, NullLogger<RoomCountdownService>.Instance))
+            .AddSingleton(provider => new BanchoBot(provider.GetRequiredService<IServiceScopeFactory>(), _rooms))
+            .BuildServiceProvider();
         IServiceScopeFactory scopes = _services.GetRequiredService<IServiceScopeFactory>();
         _players = new PlayerManager();
         _chat = new ChatServer(NullLogger<ChatServer>.Instance, scopes, _players);
@@ -152,6 +159,36 @@ public class RoomManagerTests
         Assert.That(_rooms.GetRoom(room.MatchId), Is.Null);
         Assert.That(Packets(lobby).OfType<ServerPackets.PacketDisposeMatch>().Single().Id, Is.EqualTo(room.MatchId));
         _repository.Verify(repository => repository.SetRoomEndDate(room.RoomId, It.Is<DateTimeOffset?>(date => date != null)), Times.Once);
+    }
+
+    [Test]
+    public async Task CreationUsesStableLockedSlotsAsTheMaximumParticipantCount()
+    {
+        Player host = Player(1);
+        Match settings = Settings();
+        settings.SlotStatuses = Enumerable.Repeat(SlotStatus.Open, 16).ToArray();
+        for (int index = 8; index < settings.SlotStatuses.Length; index++)
+        {
+            settings.SlotStatuses[index] = SlotStatus.Locked;
+        }
+
+        await SendAsync(host, new PacketCreateMatch { Match = settings });
+
+        IRoom room = _rooms.GetPlayerRoom(host)!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(room.Slots.Take(8).All(slot => slot.Status is SlotStatus.Open or SlotStatus.NotReady), Is.True);
+            Assert.That(room.Slots.Skip(8).All(slot => slot.Status == SlotStatus.Locked), Is.True);
+            Assert.That(room.GetMatch().SlotStatuses[8], Is.EqualTo(SlotStatus.Locked));
+        });
+        _repository.Verify(
+            repository => repository.CreateRoom(
+                It.Is<MultiplayerRoom>(match => match.Settings.MaxParticipants == 8),
+                host.Id,
+                ServerIdentify.Stable,
+                G0V0RoomCategory.Realtime,
+                false),
+            Times.Once);
     }
 
     [Test]

@@ -36,7 +36,7 @@ namespace g0v0.Server.Stable.Manager;
 /// <param name="logger">The logger.</param>
 /// <param name="scopeFactory">The scope factory used to resolve the chat repository and configuration.</param>
 /// <param name="players">The connected session registry.</param>
-public class ChatServer(
+public partial class ChatServer(
     ILogger<ChatServer> logger,
     IServiceScopeFactory scopeFactory,
     IPlayerManager players) : IChatServer
@@ -189,11 +189,16 @@ public class ChatServer(
         };
 
         // The stable client echoes the sender's own message locally, so it is skipped here.
-        IPlayer[] recipients = channel.GetMembers().Where(member => !ReferenceEquals(member, player)).ToArray();
+        bool command = message.StartsWith('!');
+        IPlayer[] recipients = !command || BanchoBot.IsMultiplayerCommand(message)
+            ? channel.GetMembers().Where(member => !ReferenceEquals(member, player)).ToArray()
+            : [];
         foreach (IPlayer recipient in recipients)
         {
             recipient.Enqueue(packet);
         }
+
+        await HandleBotCommandAsync(player, channel, message, response).ConfigureAwait(false);
 
         logger.LogInformation(
             "Session {UserId} posted to {Channel} for {RecipientCount} recipient(s).",
@@ -210,6 +215,20 @@ public class ChatServer(
         if (string.IsNullOrWhiteSpace(recipientName))
         {
             return [];
+        }
+
+        if (await IsBotRecipientAsync(recipientName).ConfigureAwait(false))
+        {
+            List<IPacket> botResponse = [];
+            string botMessage = PrepareMessage(text, ResolveChatConfig(), botResponse);
+            if (botMessage.Length == 0)
+            {
+                return botResponse.ToArray();
+            }
+
+            await StorePrivateMessageAsync(player.Id, BanchoBot.UserId, botMessage).ConfigureAwait(false);
+            await HandleBotCommandAsync(player, channel: null, botMessage, botResponse).ConfigureAwait(false);
+            return botResponse.ToArray();
         }
 
         IPlayer? target = players.GetAllPlayers()

@@ -21,7 +21,7 @@ namespace g0v0.Server.Stable.Manager;
 /// Owns the live Stable registry. Membership takes the registry gate before a room lock;
 /// gameplay takes only its room lock, allowing independent rooms to progress concurrently.
 /// </summary>
-public sealed class RoomManager : IRoomManager, IDisposable
+public sealed partial class RoomManager : IRoomManager, IDisposable
 {
     private readonly ILogger<RoomManager> _logger;
     private readonly IServiceScopeFactory _scopes;
@@ -69,82 +69,7 @@ public sealed class RoomManager : IRoomManager, IDisposable
     /// <inheritdoc/>
     public async Task CreateRoomAsync(IPlayer host, Match settings)
     {
-        await _membershipLock.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            if (!CanJoin(host) || !StableRoom.ValidSettings(settings))
-            {
-                host.Enqueue(new PacketMatchJoinFail());
-                return;
-            }
-
-            int id = Enumerable.Range(0, short.MaxValue + 1).FirstOrDefault(id => !_rooms.ContainsKey(id), -1);
-            Match normalized = StableRoom.CopySettings(settings);
-            normalized.InProgress = false;
-            normalized.HostId = host.Id;
-            if (id < 0 || !await StableRoom.ResolveBeatmapAsync(normalized, _scopes).ConfigureAwait(false))
-            {
-                host.Enqueue(new PacketMatchJoinFail());
-                return;
-            }
-
-            using IServiceScope scope = _scopes.CreateScope();
-            IRoomRepository repository = scope.ServiceProvider.GetRequiredService<IRoomRepository>();
-            DatabaseRoom stored = await repository.CreateRoom(
-                new MultiplayerRoom(0) { Settings = StableRoom.ToRoomSettings(normalized) }, host.Id, ServerIdentify.Stable, G0V0RoomCategory.Realtime).ConfigureAwait(false);
-            StableRoom? room = null;
-            try
-            {
-                ChatChannel channel = await scope.ServiceProvider.GetRequiredService<IChatRepository>()
-                    .GetOrCreateMultiplayerChannelAsync(stored.Id).ConfigureAwait(false);
-                await repository.UpdateRoomChannelId(stored.Id, channel.ChannelId).ConfigureAwait(false);
-                stored.ChannelId = channel.ChannelId;
-                room = new StableRoom(stored, checked((short)id), normalized, this, _scopes, _chat, _rulesets);
-                await room.RoomLock.WaitAsync().ConfigureAwait(false);
-                try
-                {
-                    await room.InitializePlaylistAsync().ConfigureAwait(false);
-                    if (!await room.JoinAsync(host, normalized.Password ?? string.Empty, creating: true).ConfigureAwait(false))
-                    {
-                        throw new InvalidOperationException("The creating session disconnected before joining its room.");
-                    }
-
-                    _members[host] = room;
-                    LeaveLobby(host);
-                    AttachLifecycle(host);
-                    _rooms[id] = room;
-                    BroadcastLobby(new PacketNewMatch { Match = room.GetMatch() });
-                }
-                finally
-                {
-                    room.RoomLock.Release();
-                }
-            }
-            catch
-            {
-                if (room != null)
-                {
-                    ForgetPlayer(host, room);
-                    RemoveRoom(room);
-                    await _chat.LeaveMultiplayerChannelAsync(host, room.Channel).ConfigureAwait(false);
-                    room.Dispose();
-                }
-
-                await repository.DeleteRoom(stored.Id).ConfigureAwait(false);
-                throw;
-            }
-
-            _logger.LogInformation("Created Stable room {MatchId} backed by room {RoomId} for {UserId}.", id, stored.Id, host.Id);
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            _logger.LogError(exception, "Could not create Stable room for {UserId}.", host.Id);
-            host.Enqueue(new PacketMatchJoinFail());
-        }
-        finally
-        {
-            _membershipLock.Release();
-        }
+        await CreateRoomCoreAsync(host, settings, tournamentMode: false).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -359,7 +284,7 @@ public sealed class RoomManager : IRoomManager, IDisposable
                 }
 
                 await room.ObserveAsync(player, join).ConfigureAwait(false);
-                if (join)
+                if (join && room.Channel.Contains(player))
                 {
                     _observers[player] = room;
                     AttachLifecycle(player);
@@ -421,6 +346,8 @@ public sealed class RoomManager : IRoomManager, IDisposable
         }
     }
 
+    internal IPlayer? GetOnlinePlayer(int userId) => _players.GetPlayer(userId);
+
     internal void ForgetPlayer(IPlayer player, StableRoom room) => _members.TryRemove(new KeyValuePair<IPlayer, StableRoom>(player, room));
 
     internal void ForgetObserver(IPlayer player, StableRoom room) => _observers.TryRemove(new KeyValuePair<IPlayer, StableRoom>(player, room));
@@ -449,6 +376,92 @@ public sealed class RoomManager : IRoomManager, IDisposable
     }
 
     private static bool CanObserve(IPlayer player) => player is { IsOnline: true, IsRestricted: false, IsTourneyClient: true } && player.Privileges.HasFlag(ClientPrivileges.Supporter);
+
+    private async Task<IRoom?> CreateRoomCoreAsync(IPlayer host, Match settings, bool tournamentMode)
+    {
+        await _membershipLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            using IServiceScope configurationScope = _scopes.CreateScope();
+            StableConfig config = configurationScope.ServiceProvider.GetService<g0v0.Server.Common.Configuration.ConfigManager>()?.TryGet<StableConfig>() ?? new StableConfig();
+            if (!CanJoin(host) || !StableRoom.ValidSettings(settings)
+                || (tournamentMode && _rooms.Values.Count(room => room.IsTournament && room.CreatorId == host.Id) >= config.MaxActiveTournamentRooms))
+            {
+                host.Enqueue(new PacketMatchJoinFail());
+                return null;
+            }
+
+            int id = Enumerable.Range(0, short.MaxValue + 1).FirstOrDefault(id => !_rooms.ContainsKey(id), -1);
+            Match normalized = StableRoom.CopySettings(settings);
+            normalized.InProgress = false;
+            normalized.HostId = host.Id;
+            if (id < 0 || !await StableRoom.ResolveBeatmapAsync(normalized, _scopes).ConfigureAwait(false))
+            {
+                host.Enqueue(new PacketMatchJoinFail());
+                return null;
+            }
+
+            using IServiceScope scope = _scopes.CreateScope();
+            IRoomRepository repository = scope.ServiceProvider.GetRequiredService<IRoomRepository>();
+            DatabaseRoom stored = await repository.CreateRoom(
+                new MultiplayerRoom(0) { Settings = StableRoom.ToRoomSettings(normalized, StableRoom.InitialSize(settings, tournamentMode)) }, host.Id, ServerIdentify.Stable, G0V0RoomCategory.Realtime, tournamentMode).ConfigureAwait(false);
+            stored.TournamentMode = tournamentMode;
+            StableRoom? room = null;
+            try
+            {
+                ChatChannel channel = await scope.ServiceProvider.GetRequiredService<IChatRepository>()
+                    .GetOrCreateMultiplayerChannelAsync(stored.Id).ConfigureAwait(false);
+                await repository.UpdateRoomChannelId(stored.Id, channel.ChannelId).ConfigureAwait(false);
+                stored.ChannelId = channel.ChannelId;
+                room = new StableRoom(stored, checked((short)id), normalized, this, _scopes, _chat, _rulesets);
+                await room.RoomLock.WaitAsync().ConfigureAwait(false);
+                try
+                {
+                    await room.InitializePlaylistAsync().ConfigureAwait(false);
+                    if (!await room.JoinAsync(host, normalized.Password ?? string.Empty, creating: true).ConfigureAwait(false))
+                    {
+                        throw new InvalidOperationException("The creating session disconnected before joining its room.");
+                    }
+
+                    _members[host] = room;
+                    LeaveLobby(host);
+                    AttachLifecycle(host);
+                    _rooms[id] = room;
+                    BroadcastLobby(new PacketNewMatch { Match = room.GetMatch() });
+                }
+                finally
+                {
+                    room.RoomLock.Release();
+                }
+            }
+            catch
+            {
+                if (room != null)
+                {
+                    ForgetPlayer(host, room);
+                    RemoveRoom(room);
+                    await _chat.LeaveMultiplayerChannelAsync(host, room.Channel).ConfigureAwait(false);
+                    room.Dispose();
+                }
+
+                await repository.DeleteRoom(stored.Id).ConfigureAwait(false);
+                throw;
+            }
+
+            _logger.LogInformation("Created Stable room {MatchId} backed by room {RoomId} for {UserId}.", id, stored.Id, host.Id);
+            return room;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _logger.LogError(exception, "Could not create Stable room for {UserId}.", host.Id);
+            host.Enqueue(new PacketMatchJoinFail());
+            return null;
+        }
+        finally
+        {
+            _membershipLock.Release();
+        }
+    }
 
     private bool CanJoin(IPlayer player) => player is { IsOnline: true, IsRestricted: false, IsTourneyClient: false }
         && !_members.ContainsKey(player) && !_observers.ContainsKey(player);

@@ -23,7 +23,7 @@ namespace g0v0.Server.Stable.Objects.Rooms;
 /// <summary>
 /// Maintains Stable slots and match barriers, mapping each selection and round to the shared playlist.
 /// </summary>
-public sealed class Room : IRoom, IDisposable
+public sealed partial class Room : IRoom, IDisposable
 {
     internal const LegacyMods SpeedMods = LegacyMods.DoubleTime | LegacyMods.Nightcore | LegacyMods.HalfTime;
     private readonly IServiceScopeFactory _scopes;
@@ -47,6 +47,15 @@ public sealed class Room : IRoom, IDisposable
         RulesetManager rulesets)
     {
         RoomId = stored.Id;
+        CreatorId = stored.HostId ?? 0;
+        _hostUserId = stored.HostId;
+        IsTournament = stored.TournamentMode;
+        _size = Math.Clamp(stored.MaxParticipants ?? InitialSize(settings, IsTournament), 2, 16);
+        foreach (RoomSlot slot in _slots.Skip(_size))
+        {
+            slot.Status = SlotStatus.Locked;
+        }
+
         MatchId = matchId;
         _match = settings;
         _manager = manager;
@@ -55,7 +64,8 @@ public sealed class Room : IRoom, IDisposable
         _rulesets = rulesets;
         Channel = new StableChannel("#multiplayer", settings.Name, autoJoin: false, channelId: stored.ChannelId);
         _playlist.AddRange(stored.Playlists.OrderBy(item => item.PlaylistOrder).Select(item => item.ToMultiplayerPlaylistItem()));
-        CurrentItem = _playlist.LastOrDefault(item => !item.Expired);
+        CurrentItem = _playlist.FirstOrDefault(item => !item.Expired)
+            ?? _playlist.OrderByDescending(item => item.PlayedAt ?? DateTimeOffset.MinValue).FirstOrDefault();
     }
 
     /// <inheritdoc/>
@@ -93,7 +103,7 @@ public sealed class Room : IRoom, IDisposable
     {
         Match result = CopySettings(_match);
         result.Id = MatchId;
-        result.HostId = Host?.Id ?? 0;
+        result.HostId = _hostUserId ?? 0;
         result.Password = string.IsNullOrEmpty(_match.Password) ? null : includePassword ? _match.Password : string.Empty;
         result.SlotStatuses = _slots.Select(slot => slot.Status).ToArray();
         result.SlotTeams = _slots.Select(slot => slot.Team).ToArray();
@@ -106,7 +116,7 @@ public sealed class Room : IRoom, IDisposable
     public Task ChangeSlotAsync(IPlayer player, int slotId)
     {
         int previous = FindSlotIndex(player);
-        if (InProgress || previous < 0 || !ValidSlot(slotId) || _slots[slotId].Status != SlotStatus.Open)
+        if (InProgress || previous < 0 || !ValidSlot(slotId) || slotId >= _size || _slots[slotId].Status != SlotStatus.Open)
         {
             return Task.CompletedTask;
         }
@@ -119,7 +129,7 @@ public sealed class Room : IRoom, IDisposable
     /// <inheritdoc/>
     public async Task LockSlotAsync(IPlayer player, int slotId)
     {
-        if (!IsHost(player) || InProgress || !ValidSlot(slotId) || ReferenceEquals(_slots[slotId].Player, Host))
+        if (!IsHost(player) || InProgress || !ValidSlot(slotId) || slotId >= _size || ReferenceEquals(_slots[slotId].Player, Host))
         {
             return;
         }
@@ -183,7 +193,7 @@ public sealed class Room : IRoom, IDisposable
         using (IServiceScope scope = _scopes.CreateScope())
         {
             await scope.ServiceProvider.GetRequiredService<IRoomRepository>()
-                .UpdateRoomSettings(RoomId, ToRoomSettings(next)).ConfigureAwait(false);
+                .UpdateRoomSettings(RoomId, ToRoomSettings(next, _size)).ConfigureAwait(false);
         }
 
         if (mapChanged || next.Mode != _match.Mode || next.FreeMods != _match.FreeMods || next.WinCondition != _match.WinCondition)
@@ -225,7 +235,7 @@ public sealed class Room : IRoom, IDisposable
         next.Password = string.IsNullOrEmpty(password) ? null : password;
         using IServiceScope scope = _scopes.CreateScope();
         await scope.ServiceProvider.GetRequiredService<IRoomRepository>()
-            .UpdateRoomSettings(RoomId, ToRoomSettings(next)).ConfigureAwait(false);
+            .UpdateRoomSettings(RoomId, ToRoomSettings(next, _size)).ConfigureAwait(false);
         _match = next;
         BroadcastState();
     }
@@ -306,7 +316,14 @@ public sealed class Room : IRoom, IDisposable
 
         if (CurrentItem.Expired)
         {
-            await PersistSelectionAsync(_match, newSelection: true).ConfigureAwait(false);
+            if (_playlist.Exists(item => !item.Expired))
+            {
+                await AdvanceToNextPlaylistItemAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                await PersistSelectionAsync(_match, newSelection: true).ConfigureAwait(false);
+            }
         }
 
         using IServiceScope scope = _scopes.CreateScope();
@@ -428,6 +445,17 @@ public sealed class Room : IRoom, IDisposable
     /// </summary>
     public void Dispose() => RoomLock.Dispose();
 
+    internal static int InitialSize(Match settings, bool tournamentMode)
+    {
+        if (tournamentMode)
+        {
+            return 8;
+        }
+
+        int locked = settings.SlotStatuses.Count(status => status == SlotStatus.Locked);
+        return Math.Clamp(16 - locked, 2, 16);
+    }
+
     internal static bool ValidSettings(Match match) => !string.IsNullOrWhiteSpace(match.Name) && match.Name.Length <= 100
         && match.Password?.Length is not > 40 && match.Mode is >= 0 and <= 3
         && Enum.IsDefined(match.TeamType) && Enum.IsDefined(match.WinCondition) && ValidMods(match.Mods);
@@ -449,13 +477,13 @@ public sealed class Room : IRoom, IDisposable
         Type = 0,
     };
 
-    internal static MultiplayerRoomSettings ToRoomSettings(Match match) => new()
+    internal static MultiplayerRoomSettings ToRoomSettings(Match match, int size = 16) => new()
     {
         Name = match.Name,
         Password = match.Password ?? string.Empty,
         MatchType = IsTeamMode(match.TeamType) ? MatchType.TeamVersus : MatchType.HeadToHead,
         QueueMode = QueueMode.HostOnly,
-        MaxParticipants = 16,
+        MaxParticipants = checked((byte)size),
     };
 
     internal static async Task<bool> ResolveBeatmapAsync(Match match, IServiceScopeFactory scopes)
@@ -506,14 +534,14 @@ public sealed class Room : IRoom, IDisposable
 
     internal async Task<bool> JoinAsync(IPlayer player, string password, bool creating = false)
     {
-        if (IsDisposed || player.IsRestricted || player.IsTourneyClient || !player.IsOnline
+        if (IsDisposed || _bannedUsers.Contains(player.Id) || (!creating && _joinsLocked) || player.IsRestricted || player.IsTourneyClient || !player.IsOnline
             || _slots.Any(slot => slot.Player?.Id == player.Id)
             || (!creating && !string.Equals(_match.Password ?? string.Empty, password, StringComparison.Ordinal)))
         {
             return false;
         }
 
-        RoomSlot? slot = _slots.FirstOrDefault(slot => slot.Status == SlotStatus.Open);
+        RoomSlot? slot = _slots.Take(_size).FirstOrDefault(slot => slot.Status == SlotStatus.Open);
         if (slot is null)
         {
             return false;
@@ -545,6 +573,11 @@ public sealed class Room : IRoom, IDisposable
             }
         }
 
+        if (!creating && Host is null && (_hostUserId is null || _hostUserId == player.Id))
+        {
+            await SetHostAsync(player).ConfigureAwait(false);
+        }
+
         player.Enqueue(new PacketMatchJoinSuccess { Match = GetMatch(includePassword: true) });
         BroadcastState();
         return true;
@@ -571,6 +604,17 @@ public sealed class Room : IRoom, IDisposable
         _manager.ForgetPlayer(player, this);
         if (!_slots.Any(other => other.Player != null))
         {
+            if (IsTournament && !_closing)
+            {
+                Host = null;
+                _hostUserId = CreatorId;
+                _match.InProgress = false;
+                await repository.UpdateRoomHost(RoomId, CreatorId).ConfigureAwait(false);
+                await repository.UpdateRoomStatus(RoomId, MultiplayerRoomState.Open).ConfigureAwait(false);
+                BroadcastState();
+                return;
+            }
+
             await repository.UpdateRoomStatus(RoomId, MultiplayerRoomState.Open).ConfigureAwait(false);
             await repository.UpdateRoomHost(RoomId, hostUserId: null).ConfigureAwait(false);
             await repository.SetRoomEndDate(RoomId, DateTimeOffset.UtcNow).ConfigureAwait(false);
@@ -600,7 +644,7 @@ public sealed class Room : IRoom, IDisposable
     {
         if (join)
         {
-            if (!IsDisposed && !_observers.Contains(player))
+            if (!IsDisposed && !_bannedUsers.Contains(player.Id) && !_observers.Contains(player))
             {
                 await _chat.JoinMultiplayerChannelAsync(player, Channel).ConfigureAwait(false);
                 _observers.Add(player);
@@ -650,6 +694,7 @@ public sealed class Room : IRoom, IDisposable
         using IServiceScope scope = _scopes.CreateScope();
         await scope.ServiceProvider.GetRequiredService<IRoomRepository>().UpdateRoomHost(RoomId, player.Id).ConfigureAwait(false);
         Host = player;
+        _hostUserId = player.Id;
         player.Enqueue(new PacketMatchTransferHost());
     }
 
@@ -733,6 +778,11 @@ public sealed class Room : IRoom, IDisposable
 
             slot.Loaded = false;
             slot.Skipped = false;
+        }
+
+        if (!aborted && _playlist.Exists(item => !item.Expired))
+        {
+            await AdvanceToNextPlaylistItemAsync().ConfigureAwait(false);
         }
 
         BroadcastState();
@@ -827,7 +877,67 @@ public sealed class Room : IRoom, IDisposable
     private void ReplaceCurrentItem(MultiplayerPlaylistItem item)
     {
         int index = _playlist.FindIndex(existing => existing.ID == item.ID);
+        if (index < 0)
+        {
+            return;
+        }
+
+        bool wasCurrent = CurrentItem?.ID == item.ID;
         _playlist[index] = item;
+        if (wasCurrent)
+        {
+            CurrentItem = item;
+        }
+    }
+
+    private async Task AdvanceToNextPlaylistItemAsync()
+    {
+        MultiplayerPlaylistItem? next = _playlist.Where(item => !item.Expired)
+            .OrderBy(item => item.PlaylistOrder)
+            .FirstOrDefault();
+        if (next is null || next.ID == CurrentItem?.ID)
+        {
+            return;
+        }
+
+        await ApplyPlaylistItemAsync(next).ConfigureAwait(false);
+    }
+
+    private async Task ApplyPlaylistItemAsync(MultiplayerPlaylistItem item)
+    {
+        using IServiceScope scope = _scopes.CreateScope();
+        IBeatmapRepository maps = scope.ServiceProvider.GetRequiredService<IBeatmapRepository>();
+        Beatmap? map = await maps.GetByIdAsync(item.BeatmapID).ConfigureAwait(false);
+        if (map is null && scope.ServiceProvider.GetService<IFetcher>() is { } fetcher)
+        {
+            map = await maps.GetOrFetchByIdAsync(item.BeatmapID, fetcher).ConfigureAwait(false);
+        }
+
+        if (map?.Checksum is not { Length: 32 })
+        {
+            return;
+        }
+
+        Match next = CopySettings(_match);
+        next.MapId = item.BeatmapID;
+        next.MapMd5 = map.Checksum;
+        next.MapName = map.Version;
+        next.Mode = (sbyte)item.RulesetID;
+        next.Mods = _rulesets.GetRuleset(item.RulesetID).ConvertToLegacyMods(item.RequiredMods
+            .Select(mod => _rulesets.GetRuleset(item.RulesetID).CreateModFromAcronym(mod.Acronym))
+            .Where(mod => mod is not null)
+            .Cast<Mod>()
+            .ToArray());
+        next.WinCondition = item.WinCondition switch
+        {
+            WinCondition.Accuracy => MatchWinCondition.Accuracy,
+            WinCondition.Combo => MatchWinCondition.Combo,
+            _ => MatchWinCondition.Score,
+        };
+        _match = next;
         CurrentItem = item;
+        using IServiceScope settingsScope = _scopes.CreateScope();
+        await settingsScope.ServiceProvider.GetRequiredService<IRoomRepository>()
+            .UpdateRoomSettings(RoomId, ToRoomSettings(next, _size)).ConfigureAwait(false);
     }
 }

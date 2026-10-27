@@ -98,6 +98,9 @@ public static class Program
         builder.Services.AddSingleton<IPlayerManager, PlayerManager>();
         builder.Services.AddSingleton<IChatServer, ChatServer>();
         builder.Services.AddSingleton<IRoomManager, RoomManager>();
+        builder.Services.AddSingleton<BanchoBot>();
+        builder.Services.AddSingleton<RoomCountdownService>();
+        builder.Services.AddHostedService(provider => provider.GetRequiredService<RoomCountdownService>());
         builder.Services.AddSingleton(_ => new RulesetManager(Path.Combine(builder.Environment.ContentRootPath, "rulesets")));
         builder.Services.AddScoped<IPacketFacade>(provider => new PacketFacade
         {

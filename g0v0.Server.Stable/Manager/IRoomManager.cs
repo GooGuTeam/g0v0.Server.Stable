@@ -1,5 +1,6 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
+using g0v0.Server.Stable.Objects.Chats;
 using g0v0.Server.Stable.Objects.Players;
 using g0v0.Server.Stable.Objects.Rooms;
 using g0v0.Server.Stable.Packets;
@@ -107,4 +108,18 @@ public interface IRoomManager
     /// <param name="userId">The invited account identifier.</param>
     /// <returns>A task representing completion of the operation.</returns>
     Task InviteAsync(IPlayer player, int userId);
+
+    /// <summary>Creates and joins a tournament room, enforcing the per-account room limit.</summary>
+    /// <param name="player">The creating session.</param>
+    /// <param name="name">The room title.</param>
+    /// <returns>The created room, or null when creation was rejected.</returns>
+    Task<IRoom?> CreateTournamentRoomAsync(IPlayer player, string name);
+
+    /// <summary>Runs a tournament command while holding the membership gate and the exact room lock.</summary>
+    /// <param name="player">The acting session.</param>
+    /// <param name="channel">The exact multiplayer channel receiving the command.</param>
+    /// <param name="command">The subcommand.</param>
+    /// <param name="arguments">The subcommand arguments.</param>
+    /// <returns>The command reply.</returns>
+    Task<string> ExecuteBotCommandAsync(IPlayer player, StableChannel channel, string command, string[] arguments);
 }
