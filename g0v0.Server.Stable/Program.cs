@@ -67,6 +67,7 @@ public static class Program
         }
 
         builder.Services.AddGeoIP();
+        builder.Services.AddHostedService<SessionCleanupService>();
         builder.Services.AddRedis(ServerIdentify.Stable);
         builder.Services.AddCache();
         builder.Services.AddFetcher();

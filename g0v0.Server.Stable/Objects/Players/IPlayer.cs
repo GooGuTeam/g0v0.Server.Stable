@@ -43,7 +43,7 @@ public interface IPlayer
     bool IsRestricted { get; set; }
 
     /// <summary>
-    /// Gets or sets the UTC time of the last successfully processed packet request.
+    /// Gets or sets the UTC time of the last authenticated packet request.
     /// </summary>
     DateTimeOffset LastReceiveTime { get; set; }
 

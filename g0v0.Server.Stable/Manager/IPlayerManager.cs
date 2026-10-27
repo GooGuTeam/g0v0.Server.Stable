@@ -31,6 +31,18 @@ public interface IPlayerManager
     /// <returns>Whether the registered session was removed.</returns>
     bool RemovePlayer(IPlayer player, bool isKicked = false);
 
+    /// <summary>Removes an exact session only if its last packet predates the cutoff.</summary>
+    /// <param name="player">The session to expire.</param>
+    /// <param name="cutoff">The exclusive UTC inactivity cutoff.</param>
+    /// <returns>Whether the inactive session was removed.</returns>
+    bool RemoveInactivePlayer(IPlayer player, DateTimeOffset cutoff);
+
+    /// <summary>Refreshes an exact registered session under the same lock used by expiry.</summary>
+    /// <param name="player">The session receiving a packet request.</param>
+    /// <param name="now">The request's UTC receive time.</param>
+    /// <returns>Whether the session is still registered.</returns>
+    bool RefreshSession(IPlayer player, DateTimeOffset now);
+
     /// <summary>
     /// Gets an account's ordinary session, or a tournament session if no ordinary session exists.
     /// </summary>

@@ -1,9 +1,8 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
-using g0v0.Server.Common.Database.Models;
-using g0v0.Server.Common.Database.Repository;
 using g0v0.Server.Stable.Attributes;
 using g0v0.Server.Stable.Objects.Players;
+using g0v0.Server.Stable.Services;
 
 namespace g0v0.Server.Stable.Packets.Client;
 
@@ -40,29 +39,7 @@ public class PacketLogout : IClientPacket
     public async Task<IPacket[]> Handle(IPlayer player, IPacketFacade facade)
     {
         ArgumentNullException.ThrowIfNull(player);
-        await facade.ChatServer.DisconnectAsync(player).ConfigureAwait(false);
-        await player.Offline().ConfigureAwait(false);
-
-        // Another client of the same account keeps it online; only the last one may clear the flag.
-        if (facade.PlayerManager.GetPlayerAllInstances(player.Id).Count != 0)
-        {
-            return [];
-        }
-
-        using IServiceScope scope = facade.ScopeFactory.CreateScope();
-        IUserRepository users = scope.ServiceProvider.GetRequiredService<IUserRepository>();
-        ILogger<PacketLogout> logger = scope.ServiceProvider.GetRequiredService<ILogger<PacketLogout>>();
-        User? user = await users.GetByIdAsync(player.Id).ConfigureAwait(false);
-        if (user is null)
-        {
-            logger.LogWarning("Logged out session {UserId} has no user row; the online flag was not cleared.", player.Id);
-            return [];
-        }
-
-        user.IsOnline = false;
-        user.LastVisit = DateTimeOffset.UtcNow;
-        await users.UpdateAsync(user).ConfigureAwait(false);
-        logger.LogInformation("User {UserId} went offline at {LastVisit:O}.", user.Id, user.LastVisit);
+        await SessionLifecycle.DisconnectAsync(player, facade.PlayerManager, facade.ChatServer, facade.ScopeFactory, TimeProvider.System).ConfigureAwait(false);
         return [];
     }
 }

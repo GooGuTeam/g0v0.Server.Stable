@@ -35,6 +35,8 @@ public class PacketRouteHandler(IPacketFacade facade, ILogger<PacketRouteHandler
                 contentType: "application/octet-stream");
         }
 
+        facade.PlayerManager.RefreshSession(player, DateTimeOffset.UtcNow);
+
         // Packet readers are synchronous; buffer the asynchronous HTTP body first.
         using MemoryStream body = new();
         await context.Request.Body.CopyToAsync(body, context.RequestAborted);
@@ -77,10 +79,7 @@ public class PacketRouteHandler(IPacketFacade facade, ILogger<PacketRouteHandler
             }
         }
 
-        if (ReferenceEquals(facade.PlayerManager.GetPlayer(player.Token), player))
-        {
-            player.LastReceiveTime = DateTimeOffset.UtcNow;
-        }
+        facade.PlayerManager.RefreshSession(player, DateTimeOffset.UtcNow);
 
         return Results.Bytes(player.Dequeue(), contentType: "application/octet-stream");
     }

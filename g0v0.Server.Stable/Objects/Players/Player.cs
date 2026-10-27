@@ -81,7 +81,7 @@ public class Player : IPlayer
     public bool IsRestricted { get; set; }
 
     /// <summary>
-    /// Gets or sets the UTC time of the last successfully processed packet request.
+    /// Gets or sets the UTC time of the last authenticated packet request.
     /// </summary>
     public DateTimeOffset LastReceiveTime { get; set; }
 
