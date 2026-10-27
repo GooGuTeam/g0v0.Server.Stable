@@ -98,13 +98,13 @@ public class ScoreProcessingQueueTests
         int attempts = 0;
         fetcher.Setup(f => f.FetchBeatmapRawAsync(2, It.IsAny<CancellationToken>())).Returns(() =>
         {
-            if (Interlocked.Increment(ref attempts) == 1)
+            if (Interlocked.Increment(ref attempts) != 1)
             {
-                firstAttempt.TrySetResult();
-                throw new HttpRequestException("Temporary mirror outage");
+                return Task.FromResult(content);
             }
 
-            return Task.FromResult(content);
+            firstAttempt.TrySetResult();
+            throw new HttpRequestException("Temporary mirror outage");
         });
         Mock<IScoreRepository> scores = new();
         scores.Setup(s => s.GetUnprocessedScoresAsync(0, 100, "stable")).ReturnsAsync(() => completed.Task.IsCompleted ? [] : new[] { score });
@@ -119,8 +119,8 @@ public class ScoreProcessingQueueTests
             services.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<ScoreProcessingQueue>.Instance,
             "stable",
-            (services, score, cancellationToken) => services.GetRequiredService<ScoreProcessingService>().ProcessAsync(score, cancellationToken),
-            score => !score.Passed || score.HasReplay);
+            (scopeServices, pendingScore, cancellationToken) => scopeServices.GetRequiredService<ScoreProcessingService>().ProcessAsync(pendingScore, cancellationToken),
+            pendingScore => !pendingScore.Passed || pendingScore.HasReplay);
         await queue.StartAsync(CancellationToken.None);
         try
         {

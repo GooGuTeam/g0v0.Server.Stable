@@ -133,7 +133,7 @@ public partial class SubmitScoreRouteHandlerTests
             Assert.That(_uploaded, Is.Not.Null);
             Assert.That(response, Does.Contain("onlineScoreId:42"));
         });
-        _storage.Verify(s => s.WriteFileAsync("replays/42_2_1_lazer_replay.osr", It.IsAny<byte[]>(), "application/x-osu-replay", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        _storage.Verify(s => s.WriteFileAsync("replays/42_2_1_stable_replay.osr", It.IsAny<byte[]>(), "application/x-osu-replay", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         _scores.Verify(s => s.MarkScoreHasReplay(42), Times.Once);
     }
 
@@ -214,7 +214,7 @@ public partial class SubmitScoreRouteHandlerTests
             ["s"] = fixture["encryptedClientHash"],
             ["osuver"] = fixture["version"],
             ["sbk"] = tamper ? "modified" : fixture["storyboardHash"],
-            ["bmk"] = new string('a', 32),
+            ["bmk"] = new('a', 32),
             ["pass"] = password,
             ["st"] = "2000",
             ["ft"] = "0"

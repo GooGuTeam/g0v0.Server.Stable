@@ -46,8 +46,7 @@ jobs:
       - name: Build with analyzers
         run: |
           cd g0v0.Server.Stable
-          # Keep upstream NuGet audit notices visible while treating code and analyzer warnings as errors.
-          dotnet build --no-restore --configuration Release /warnaserror '/p:WarningsNotAsErrors=NU1902%3BNU1903'
+          dotnet build --no-restore --configuration Release /warnaserror
 
   inspectcode:
     name: JetBrains InspectCode

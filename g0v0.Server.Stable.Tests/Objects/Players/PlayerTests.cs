@@ -51,14 +51,14 @@ public class PlayerTests
     [TestCase(-1)]
     public void RejectsInvalidIds(int id)
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Player(id));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CreatePlayer(id));
     }
 
     [TestCase("")]
     [TestCase(" ")]
     public void RejectsEmptyTokens(string token)
     {
-        Assert.Throws<ArgumentException>(() => new Player(1, token));
+        Assert.Throws<ArgumentException>(() => CreatePlayer(1, token));
     }
 
     [Test]
@@ -67,4 +67,8 @@ public class PlayerTests
         Player player = new(1);
         Assert.Throws<ArgumentNullException>(() => player.Activity = null!);
     }
+
+    private static void CreatePlayer(int id) => _ = new Player(id);
+
+    private static void CreatePlayer(int id, string token) => _ = new Player(id, token);
 }

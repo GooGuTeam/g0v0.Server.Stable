@@ -27,12 +27,12 @@ Run from the Stable repo root (the directory containing `g0v0.Server.Stable.sln`
 - Run server: `dotnet run --project g0v0.Server.Stable/g0v0.Server.Stable.csproj`
 - Format check (CI gate): `dotnet format --verify-no-changes --verbosity diagnostic`
 - Apply formatting: `dotnet format`
-- CI-equivalent build (after restore): `dotnet build --no-restore --configuration Release /warnaserror '/p:WarningsNotAsErrors=NU1902%3BNU1903'`
+- CI-equivalent build (after restore): `dotnet build --no-restore --configuration Release /warnaserror`
 - Install InspectCode: `dotnet tool install --global JetBrains.ReSharper.GlobalTools --version 2026.2.1`
 - InspectCode (after a Release build): `jb inspectcode g0v0.Server.Stable.sln --no-build --no-updates --severity=WARNING --swea --output=artifacts/inspectcode.sarif` (create `artifacts/` first).
 - CI test command (after a Release build): `dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"`
 
-CI has three jobs: `build-warnaserror` (format verification and an analyzer build), `inspectcode` (warning-level analysis with solution-wide analysis enabled), and `test` (NUnit plus coverage). Format drift, code/analyzer warnings, InspectCode warnings/errors, or failing tests fail CI. The build keeps `NU1902`/`NU1903` NuGet audit notices visible without promoting them to errors; preserve that distinction when reproducing CI.
+CI has three jobs: `build-warnaserror` (format verification and an analyzer build), `inspectcode` (warning-level analysis with solution-wide analysis enabled), and `test` (NUnit plus coverage). Format drift, code/analyzer warnings, InspectCode warnings/errors, or failing tests fail CI. The shared build props suppress only the known ImageSharp advisories; other NuGet audit notices remain errors in CI.
 
 `global.json` pins SDK `10.0.0` (`rollForward: latestMinor`, no prereleases). `Directory.Build.props` injects StyleCop.Analyzers, Meziantou.Analyzer, Roslynator, `EnforceCodeStyleInBuild`, and XML documentation generation into every project. It pins the built-in analyzer rule set to `9.0-recommended`; do not duplicate the shared analyzer references in `.csproj` files.
 

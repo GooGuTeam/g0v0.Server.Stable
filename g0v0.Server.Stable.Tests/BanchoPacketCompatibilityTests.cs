@@ -7,7 +7,7 @@ namespace g0v0.Server.Stable.Tests;
 
 public class BanchoPacketCompatibilityTests
 {
-    [TestCaseSource(nameof(banchoCases))]
+    [TestCaseSource(nameof(BanchoCases))]
     public void MatchesOriginalBanchoPyExpectedBytes(string typeName, string packetJson, string expectedHex)
     {
         Type type = typeof(IPacket).Assembly.GetType($"g0v0.Server.Stable.Packets.Server.{typeName}", throwOnError: true)!;
@@ -15,13 +15,13 @@ public class BanchoPacketCompatibilityTests
         Assert.That(PacketConvert.Serialize(packet), Is.EqualTo(Convert.FromHexString(expectedHex)));
     }
 
-    [TestCaseSource(nameof(supplementalCases))]
+    [TestCaseSource(nameof(SupplementalCases))]
     public void MatchesConditionalLayoutsFromBanchoPyReaderAndProtocol(string typeName, string packetJson, string expectedHex)
     {
         MatchesOriginalBanchoPyExpectedBytes(typeName, packetJson, expectedHex);
     }
 
-    [TestCaseSource(nameof(readerCases))]
+    [TestCaseSource(nameof(ReaderCases))]
     public void ReadsBanchoPyPayloadsIntoClientPackets(string typeName, string packetJson, string expectedHex)
     {
         Type type = typeof(IPacket).Assembly.GetType($"g0v0.Server.Stable.Packets.Client.{typeName}", throwOnError: true)!;
@@ -32,22 +32,22 @@ public class BanchoPacketCompatibilityTests
         Assert.That(JsonSerializer.Serialize(actual, type), Is.EqualTo(JsonSerializer.Serialize(expected, type)));
     }
 
-    private static IEnumerable<TestCaseData> banchoCases()
+    private static IEnumerable<TestCaseData> BanchoCases()
     {
-        return cases("Cases");
+        return Cases("Cases");
     }
 
-    private static IEnumerable<TestCaseData> supplementalCases()
+    private static IEnumerable<TestCaseData> SupplementalCases()
     {
-        return cases("SupplementalCases");
+        return Cases("SupplementalCases");
     }
 
-    private static IEnumerable<TestCaseData> readerCases()
+    private static IEnumerable<TestCaseData> ReaderCases()
     {
-        return cases("ReaderCases");
+        return Cases("ReaderCases");
     }
 
-    private static IEnumerable<TestCaseData> cases(string section)
+    private static IEnumerable<TestCaseData> Cases(string section)
     {
         using Stream stream = typeof(BanchoPacketCompatibilityTests).Assembly.GetManifestResourceStream(
             "g0v0.Server.Stable.Tests.Fixtures.bancho-packets.json")!;

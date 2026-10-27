@@ -22,6 +22,7 @@ namespace g0v0.Server.Stable.Tests.Routes;
 public class LoginRouteHandlerTests
 {
     private const string PasswordMd5 = "5f4dcc3b5aa765d61d8327deb882cf99";
+    private static readonly string[] ExpectedLoginChannels = ["#osu", "#announce"];
     private Mock<IUserRepository> _users = null!;
     private Mock<ILoginRepository> _logins = null!;
     private Mock<IRelationshipRepository> _relationships = null!;
@@ -45,7 +46,7 @@ public class LoginRouteHandlerTests
             .BuildServiceProvider();
         _players = new PlayerManager();
         _verification = new VerificationConfig();
-        _configPath = Path.Combine(Path.GetTempPath(), "stable-login-config-" + Guid.NewGuid());
+        _configPath = Path.Combine(Path.GetTempPath(), "stable-Login-config-" + Guid.NewGuid());
         Directory.CreateDirectory(Path.Combine(_configPath, "config"));
         File.WriteAllText(Path.Combine(_configPath, "config", "verification.json"), Newtonsoft.Json.JsonConvert.SerializeObject(_verification));
         _configs = new ConfigManager(_configPath);
@@ -87,7 +88,7 @@ public class LoginRouteHandlerTests
     {
         string clientHash = $"0123456789abcdef0123456789ABCDEF:{adapters}:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:abcdef0123456789ABCDEF0123456789:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:";
         string data = $"alice\n{PasswordMd5}\nb20261024|8|1|{clientHash}|1\n";
-        DefaultHttpContext context = await login(data);
+        DefaultHttpContext context = await Login(data);
         Assert.That(context.Response.StatusCode, Is.EqualTo(200));
         Assert.That(context.Response.Headers["cho-token"].ToString(), Is.EqualTo("verification-required"));
         Assert.That(_players.GetAllPlayers(), Is.Empty);
@@ -110,7 +111,7 @@ public class LoginRouteHandlerTests
     public async Task TrustedDeviceLogsInAndReceivesAValidSessionToken()
     {
         _device = new TrustedDevice { Id = 3, UserId = 1, ClientType = "stable", UserAgent = "osu!", ExpiresAt = DateTimeOffset.UtcNow.AddDays(1) };
-        DefaultHttpContext context = await login();
+        DefaultHttpContext context = await Login();
         IPlayer player = _players.GetPlayer(1)!;
         Assert.That(player, Is.Not.Null);
         Assert.That(context.Response.Headers["cho-token"].ToString(), Is.EqualTo(player.Token));
@@ -120,11 +121,11 @@ public class LoginRouteHandlerTests
         IPacket[] loginPackets = PacketConvert.DeserializeAll(response, new PacketFacade());
         Assert.That(loginPackets.OfType<PacketUserId>().Single().UserId, Is.EqualTo(1));
 
-        // The channel directory must end the login response: without S89 the client keeps
+        // The channel directory must end the Login response: without S89 the client keeps
         // showing "Receiving data...".
         Assert.That(
             loginPackets.OfType<PacketChannelInfo>().Select(packet => packet.Channel.Name),
-            Is.EquivalentTo(new[] { "#osu", "#announce" }));
+            Is.EquivalentTo(ExpectedLoginChannels));
         Assert.That(loginPackets[^1], Is.TypeOf<PacketChannelInfoEnd>());
         _users.Verify(users => users.UpdateAsync(_user), Times.Once);
     }
@@ -132,10 +133,10 @@ public class LoginRouteHandlerTests
     [Test]
     public async Task ALocallyVerifiedPendingSessionAllowsTheNextLogin()
     {
-        await login();
+        await Login();
         LoginSession pending = _session!;
         pending.IsVerified = true;
-        await login();
+        await Login();
         Assert.That(_players.GetPlayer(1), Is.Not.Null);
         Assert.That(_session!.IsVerified, Is.True);
         Assert.That(_device!.ExpiresAt, Is.GreaterThan(DateTimeOffset.UtcNow));
@@ -144,9 +145,9 @@ public class LoginRouteHandlerTests
     [Test]
     public async Task RepeatedPendingLoginsReuseTheUnverifiedSession()
     {
-        await login();
+        await Login();
         LoginSession pending = _session!;
-        await login();
+        await Login();
         Assert.That(_session, Is.SameAs(pending));
         Assert.That(_session!.IsVerified, Is.False);
         Assert.That(_players.GetAllPlayers(), Is.Empty);
@@ -156,7 +157,7 @@ public class LoginRouteHandlerTests
     public async Task DisabledVerificationAutomaticallyVerifiesTheDevice()
     {
         _verification.EnableSessionVerification = false;
-        await login();
+        await Login();
         Assert.That(_session!.IsVerified, Is.True);
         Assert.That(_players.GetPlayer(1), Is.Not.Null);
     }
@@ -164,7 +165,7 @@ public class LoginRouteHandlerTests
     [Test]
     public async Task InvalidPasswordIsAuditedWithoutCreatingADeviceOrSession()
     {
-        DefaultHttpContext context = await login(body().Replace(PasswordMd5, new string('0', 32), StringComparison.Ordinal));
+        DefaultHttpContext context = await Login(Body().Replace(PasswordMd5, new string('0', 32), StringComparison.Ordinal));
         Assert.That(context.Response.Headers["cho-token"].ToString(), Is.EqualTo("incorrect-credentials"));
         Assert.That(_audit!.LoginSuccess, Is.False);
         Assert.That(_device, Is.Null);
@@ -178,7 +179,7 @@ public class LoginRouteHandlerTests
         // Generated with Python bcrypt, the format the password hashes are stored in.
         _logins.Setup(logins => logins.GetPasswordHashAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync("$2b$04$abcdefghijklmnopqrstuughE8Ev8uGFaUgY2cNEySvxngrb/Jzdm");
-        DefaultHttpContext context = await login();
+        DefaultHttpContext context = await Login();
         Assert.That(context.Response.Headers["cho-token"].ToString(), Is.EqualTo("incorrect-credentials"));
         Assert.That(_players.GetAllPlayers(), Is.Empty);
     }
@@ -186,7 +187,7 @@ public class LoginRouteHandlerTests
     [Test]
     public async Task MalformedLoginDoesNotQueryTheDatabase()
     {
-        DefaultHttpContext context = await login("invalid");
+        DefaultHttpContext context = await Login("invalid");
         Assert.That(context.Response.Headers["cho-token"].ToString(), Is.EqualTo("invalid-request"));
         _users.VerifyNoOtherCalls();
         _logins.VerifyNoOtherCalls();
@@ -196,7 +197,7 @@ public class LoginRouteHandlerTests
     public async Task BotsCannotLogIn()
     {
         _user.IsBot = true;
-        DefaultHttpContext context = await login();
+        DefaultHttpContext context = await Login();
         Assert.That(context.Response.Headers["cho-token"].ToString(), Is.EqualTo("account-disabled"));
         Assert.That(_audit!.LoginSuccess, Is.False);
         Assert.That(_players.GetAllPlayers(), Is.Empty);
@@ -206,7 +207,7 @@ public class LoginRouteHandlerTests
     public async Task AccountActivityFlagIsNotTreatedAsARestriction()
     {
         _user.IsActive = false;
-        await login();
+        await Login();
         Assert.That(_session, Is.Not.Null);
         Assert.That(_audit!.LoginSuccess, Is.True);
     }
@@ -216,7 +217,7 @@ public class LoginRouteHandlerTests
     {
         Player previous = new(1) { LastReceiveTime = DateTimeOffset.UtcNow };
         _players.AddPlayer(previous);
-        DefaultHttpContext context = await login();
+        DefaultHttpContext context = await Login();
         Assert.That(context.Response.Headers["cho-token"].ToString(), Is.EqualTo("user-already-logged-in"));
         Assert.That(_players.GetPlayer(1), Is.SameAs(previous));
         Assert.That(_session, Is.Null);
@@ -228,19 +229,19 @@ public class LoginRouteHandlerTests
         _verification.EnableSessionVerification = false;
         Player previous = new(1) { LastReceiveTime = DateTimeOffset.UtcNow.AddMinutes(-1) };
         _players.AddPlayer(previous);
-        await login();
+        await Login();
         Assert.That(_players.GetPlayer(1), Is.Not.SameAs(previous));
         Assert.That(_session!.IsVerified, Is.True);
     }
 
-    private static string body() => $"alice\n{PasswordMd5}\nb20261024|8|1|path:adapter.:{new string('a', 32)}:uninstall:{new string('b', 32)}:|1\n";
+    private static string Body() => $"alice\n{PasswordMd5}\nb20261024|8|1|path:adapter.:{new string('a', 32)}:uninstall:{new string('b', 32)}:|1\n";
 
-    private async Task<DefaultHttpContext> login(string? data = null)
+    private async Task<DefaultHttpContext> Login(string? data = null)
     {
         DefaultHttpContext context = new() { RequestServices = _services };
         context.Request.Headers.UserAgent = "osu!";
         context.Connection.RemoteIpAddress = IPAddress.Parse("81.2.69.142");
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(data ?? body()));
+        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(data ?? Body()));
         context.Response.Body = new MemoryStream();
         ChatServer chats = new(NullLogger<ChatServer>.Instance, _services.GetRequiredService<IServiceScopeFactory>(), _players);
         StableWebAuthenticator authenticator = new(_users.Object, _logins.Object);

@@ -1,5 +1,6 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
+// ReSharper disable AccessToDisposedClosure
 using g0v0.Server.Stable.Attributes;
 using g0v0.Server.Stable.Packets;
 using g0v0.Server.Stable.Packets.Server;
