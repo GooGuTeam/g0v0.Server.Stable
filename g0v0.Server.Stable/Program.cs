@@ -150,7 +150,7 @@ public static class Program
 
         app.MapGet("/healthz", () => Results.Ok(new { Service = "g0v0.Server.Stable", Status = "ok" }));
         app.MapPost("/users", (HttpContext context, RegisterRouteHandler handler) => handler.HandleAsync(context));
-        app.MapPost("/", (HttpContext context, LoginRouteHandler handler) => handler.HandleAsync(context));
+        app.MapPost("/login", (HttpContext context, LoginRouteHandler handler) => handler.HandleAsync(context));
         app.MapPost("/packet", (HttpContext context, PacketRouteHandler handler) => handler.HandleAsync(context));
         app.MapPost("/web/osu-submit-modular-selector.php", (HttpContext context, SubmitScoreRouteHandler handler) => handler.HandleAsync(context));
         app.MapPost("/web/osu-getbeatmapinfo.php", (HttpContext context, BeatmapInfoRouteHandler handler) => handler.HandleAsync(context));
@@ -158,7 +158,6 @@ public static class Program
         app.MapGet("/web/osu-getfriends.php", (HttpContext context, FriendsRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/web/osu-search.php", (HttpContext context, SearchRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/web/osu-search-set.php", (HttpContext context, SearchSetRouteHandler handler) => handler.HandleAsync(context));
-
         app.MapGet("/web/osu-getseasonal.php", (HttpContext context, SeasonalRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/web/osu-rate.php", (HttpContext context, RatingRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/web/osu-getreplay.php", (HttpContext context, ReplayRouteHandler handler) => handler.HandleAsync(context));
