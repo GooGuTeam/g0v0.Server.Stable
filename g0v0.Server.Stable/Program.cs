@@ -169,6 +169,9 @@ public static class Program
         app.MapGet("/web/maps/{map_filename}", (HttpContext context, BeatmapFileRouteHandler handler) => handler.HandleAsync(context));
         app.MapGet("/p/doyoureallywanttoaskpeppy", (HttpContext context, CallPeppyRouteHandler handler) => handler.HandleAsync(context));
 
+        // TODO: reverse-engineer found `/web/bancho_connect.php` will upload system registry and other information to the server.
+        app.MapGet("/web/bancho_connect.php", () => Results.Empty);
+
         return app;
     }
 }
