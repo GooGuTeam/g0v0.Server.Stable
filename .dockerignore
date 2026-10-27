@@ -1,0 +1,39 @@
+# VCS
+**/.git
+**/.gitignore
+**/.gitattributes
+
+# IDE / tooling
+**/.idea
+**/.vs
+**/.vscode
+**/.project
+**/.settings
+**/.toolstarget
+**/*.*proj.user
+**/*.DotSettings.user
+
+# Build outputs (stable + sibling Common)
+**/bin
+**/obj
+**/artifacts
+**/TestResults
+**/packages
+
+# Runtime data - mounted as volumes, never baked into the image.
+# Config files may contain secrets (DB passwords, JWT keys); storage/ may hold replays.
+**/config/
+**/storage/
+**/rulesets/
+
+# Misc
+**/.env
+**/node_modules
+**/npm-debug.log
+**/azds.yaml
+**/docker-compose*
+**/Dockerfile*
+**/charts
+**/secrets.dev.yaml
+**/values.dev.yaml
+*.swp
