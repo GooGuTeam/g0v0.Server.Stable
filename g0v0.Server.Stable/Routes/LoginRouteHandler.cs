@@ -164,6 +164,31 @@ public class LoginRouteHandler(
         LoginSession? previous = await logins.GetSessionAsync(user.Id, "stable", deviceHash, now, cancellation);
         bool trusted = device?.ExpiresAt > now || previous?.IsVerified == true;
         bool verified = !_verification.EnableSessionVerification || trusted;
+
+        LoginSession session = previous is { IsVerified: false } ? previous : new LoginSession { UserId = user.Id, CreatedAt = now };
+        session.IpAddress = ip;
+        session.UserAgent = login.OsuVersionString;
+        session.DeviceHash = deviceHash;
+        session.IsNewDevice = !trusted;
+        session.IsVerified = verified;
+        session.VerifiedAt = verified ? now : null;
+        session.ExpiresAt = now.AddHours(24);
+        audit.LoginMethod = verified ? "stable_password" : "stable_pending_verification";
+
+        if (!verified)
+        {
+            // The pending session keeps the device hash, but no device: trust is granted only
+            // after the account owner approves this client through the verification endpoint,
+            // which creates the trusted device (and attaches it to this session).
+            session.Device = null;
+            session.DeviceId = null;
+            await logins.RecordAsync(session, device: null, audit, cancellation);
+            context.Response.Headers["cho-token"] = "verification-required";
+            return Results.Bytes(
+                PacketConvert.SerializeAll([new PacketUserId(LoginFailureReason.RequiresVerification)]),
+                contentType: "application/octet-stream");
+        }
+
         device ??= new TrustedDevice
         {
             UserId = user.Id,
@@ -175,28 +200,9 @@ public class LoginRouteHandler(
         device.IpAddress = ip;
         device.UserAgent = login.OsuVersionString;
         device.LastUsedAt = now;
-
-        // An unverified device is recorded but never receives an active trust lifetime.
-        device.ExpiresAt = verified ? now.AddDays(_verification.DeviceTrustDurationDays) : null;
-        LoginSession session = previous is { IsVerified: false } ? previous : new LoginSession { UserId = user.Id, CreatedAt = now };
-        session.IpAddress = ip;
-        session.UserAgent = login.OsuVersionString;
+        device.ExpiresAt = now.AddDays(_verification.DeviceTrustDurationDays);
         session.Device = device;
-        session.DeviceHash = deviceHash;
-        session.IsNewDevice = !trusted;
-        session.IsVerified = verified;
-        session.VerifiedAt = verified ? now : null;
-        session.ExpiresAt = now.AddHours(24);
-        audit.LoginMethod = verified ? "stable_password" : "stable_pending_verification";
         await logins.RecordAsync(session, device, audit, cancellation);
-
-        if (!verified)
-        {
-            context.Response.Headers["cho-token"] = "verification-required";
-            return Results.Bytes(
-                PacketConvert.SerializeAll([new PacketUserId(LoginFailureReason.RequiresVerification)]),
-                contentType: "application/octet-stream");
-        }
 
         Player player = new(user.Id, players, isTourneyClient: tourney)
         {

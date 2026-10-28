@@ -84,7 +84,7 @@ public class LoginRouteHandlerTests
 
     [TestCase("001122334455.AABBCCDDEEFF.")]
     [TestCase("runningunderwine")]
-    public async Task NewDeviceIsRecordedButCannotEnterTheOnlinePlayerManager(string adapters)
+    public async Task NewDeviceIsRecordedWithoutTrustAndCannotEnterTheOnlinePlayerManager(string adapters)
     {
         string clientHash = $"0123456789abcdef0123456789ABCDEF:{adapters}:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:abcdef0123456789ABCDEF0123456789:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:";
         string data = $"alice\n{PasswordMd5}\nb20261024|8|1|{clientHash}|1\n";
@@ -94,9 +94,12 @@ public class LoginRouteHandlerTests
         Assert.That(_players.GetAllPlayers(), Is.Empty);
         Assert.That(_session!.IsVerified, Is.False);
         Assert.That(_session.DeviceHash, Is.EqualTo(clientHash));
-        Assert.That(_device!.DeviceHash, Is.EqualTo(clientHash));
-        Assert.That(_device.ClientType, Is.EqualTo("stable"));
-        Assert.That(_device.ExpiresAt, Is.Null);
+        Assert.That(_session.Device, Is.Null);
+        Assert.That(_session.DeviceId, Is.Null);
+
+        // Trust is granted by the verification endpoint, so an unverified login must not
+        // leave a trusted-device row behind.
+        Assert.That(_device, Is.Null);
         Assert.That(_audit!.LoginMethod, Is.EqualTo("stable_pending_verification"));
         using MemoryStream response = new(((MemoryStream)context.Response.Body).ToArray());
         IPacket[] packets = PacketConvert.DeserializeAll(response, new PacketFacade());
