@@ -80,6 +80,7 @@ public interface IRoom
 
     /// <summary>
     /// Toggles a slot lock as host, removing an occupant immediately.
+    /// The maximum participant count mirrors the number of unlocked slots after the toggle.
     /// </summary>
     /// <param name="player">The acting session.</param>
     /// <param name="slotId">The zero-based slot index.</param>

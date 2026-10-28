@@ -51,16 +51,35 @@ public partial class RoomManagerTests
     }
 
     [Test]
-    public async Task CapacityAndJoinLockCannotBeBypassedUsingNativeSlotPackets()
+    public async Task HostSlotUnlocksRaiseTheAvailableSlotCountWhileJoinLockAndOccupiedShrinkChecksStillApply()
     {
         (Player host, Player guest, IRoom room) = await PairAsync();
         await CommandAsync(host, room, "size", "2");
-        await SendAsync(host, new PacketMatchLock { SlotId = 15 });
+        await SendAsync(guest, new PacketMatchLock { SlotId = 15 });
         await SendAsync(guest, new PacketMatchChangeSlot { SlotId = 15 });
-        Assert.That(room.Slots[15].Status, Is.EqualTo(SlotStatus.Locked));
-        Assert.That(room.Slots[1].Player, Is.SameAs(guest));
+        Assert.Multiple(() =>
+        {
+            Assert.That(room.Slots[15].Status, Is.EqualTo(SlotStatus.Locked));
+            Assert.That(room.Slots[1].Player, Is.SameAs(guest));
+        });
+
+        // The host toggling the native slot lock adds one usable slot to MaxParticipants.
+        await SendAsync(host, new PacketMatchLock { SlotId = 15 });
+        Assert.That(room.Slots[15].Status, Is.EqualTo(SlotStatus.Open));
+        _repository.Verify(
+            repository => repository.UpdateRoomSettings(room.RoomId, It.Is<MultiplayerRoomSettings>(settings => settings.MaxParticipants == 3)),
+            Times.Once);
+
+        await SendAsync(guest, new PacketMatchChangeSlot { SlotId = 15 });
+        Assert.Multiple(() =>
+        {
+            Assert.That(room.Slots[15].Player, Is.SameAs(guest));
+            Assert.That(room.Slots[1].Status, Is.EqualTo(SlotStatus.Open));
+        });
+
+        // Shrinking still refuses to cross an occupied slot, and the join lock still gates membership.
+        Assert.That(await CommandAsync(host, room, "size", "2"), Does.Contain("occupied"));
         Player third = Player(4);
-        await CommandAsync(host, room, "size", "3");
         await CommandAsync(host, room, "lock");
         await _rooms.JoinRoomAsync(third, room.MatchId, string.Empty);
         Assert.That(_rooms.GetPlayerRoom(third), Is.Null);
@@ -68,7 +87,32 @@ public partial class RoomManagerTests
         await _rooms.JoinRoomAsync(third, room.MatchId, string.Empty);
         Assert.That(_rooms.GetPlayerRoom(third), Is.SameAs(room));
         Assert.That(await CommandAsync(host, room, "size", "2"), Does.Contain("occupied"));
-        _repository.Verify(repository => repository.UpdateRoomSettings(room.RoomId, It.Is<MultiplayerRoomSettings>(settings => settings.MaxParticipants == 3)), Times.Once);
+        Assert.That(room.Slots.Take(2).Count(slot => slot.Player is not null), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task ResizeCommandKeepsTheSlotCountInSyncWithMaxParticipants()
+    {
+        (Player host, Player guest, IRoom room) = await PairAsync();
+        await SendAsync(host, new PacketMatchLock { SlotId = 2 });
+        Assert.That(room.Slots[2].Status, Is.EqualTo(SlotStatus.Locked));
+        _repository.Verify(
+            repository => repository.UpdateRoomSettings(room.RoomId, It.Is<MultiplayerRoomSettings>(settings => settings.MaxParticipants == 15)),
+            Times.Once);
+
+        await CommandAsync(host, room, "size", "16");
+        Assert.That(room.Slots[2].Status, Is.EqualTo(SlotStatus.Open));
+        _repository.Verify(
+            repository => repository.UpdateRoomSettings(room.RoomId, It.Is<MultiplayerRoomSettings>(settings => settings.MaxParticipants == 16)),
+            Times.Once);
+
+        await CommandAsync(host, room, "size", "2");
+        Assert.Multiple(() =>
+        {
+            Assert.That(room.Slots.Count(slot => slot.Status != SlotStatus.Locked), Is.EqualTo(2));
+            Assert.That(room.Slots[0].Player, Is.SameAs(host));
+            Assert.That(room.Slots[1].Player, Is.SameAs(guest));
+        });
     }
 
     [Test]

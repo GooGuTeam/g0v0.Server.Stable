@@ -116,7 +116,7 @@ public sealed partial class Room : IRoom, IDisposable
     public Task ChangeSlotAsync(IPlayer player, int slotId)
     {
         int previous = FindSlotIndex(player);
-        if (InProgress || previous < 0 || !ValidSlot(slotId) || slotId >= _size || _slots[slotId].Status != SlotStatus.Open)
+        if (InProgress || previous < 0 || !ValidSlot(slotId) || _slots[slotId].Status != SlotStatus.Open)
         {
             return Task.CompletedTask;
         }
@@ -129,7 +129,7 @@ public sealed partial class Room : IRoom, IDisposable
     /// <inheritdoc/>
     public async Task LockSlotAsync(IPlayer player, int slotId)
     {
-        if (!IsHost(player) || InProgress || !ValidSlot(slotId) || slotId >= _size || ReferenceEquals(_slots[slotId].Player, Host))
+        if (!IsHost(player) || InProgress || !ValidSlot(slotId) || ReferenceEquals(_slots[slotId].Player, Host))
         {
             return;
         }
@@ -138,6 +138,7 @@ public sealed partial class Room : IRoom, IDisposable
         if (slot.Player is { } occupant)
         {
             await LeaveAsync(occupant, locked: true).ConfigureAwait(false);
+            await SyncCapacityAsync().ConfigureAwait(false);
 
             // Stable leaves the match when its user ID disappears from the slot snapshot.
             occupant.Enqueue(new PacketUpdateMatch { Match = GetMatch() });
@@ -145,6 +146,7 @@ public sealed partial class Room : IRoom, IDisposable
         }
 
         slot.Reset(slot.Status == SlotStatus.Locked ? SlotStatus.Open : SlotStatus.Locked);
+        await SyncCapacityAsync().ConfigureAwait(false);
         BroadcastState();
     }
 
@@ -541,7 +543,7 @@ public sealed partial class Room : IRoom, IDisposable
             return false;
         }
 
-        RoomSlot? slot = _slots.Take(_size).FirstOrDefault(slot => slot.Status == SlotStatus.Open);
+        RoomSlot? slot = _slots.FirstOrDefault(slot => slot.Status == SlotStatus.Open);
         if (slot is null)
         {
             return false;

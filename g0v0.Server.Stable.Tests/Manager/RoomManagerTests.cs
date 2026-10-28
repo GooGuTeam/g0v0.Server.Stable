@@ -192,6 +192,47 @@ public partial class RoomManagerTests
     }
 
     [Test]
+    public async Task MaxParticipantsMirrorsTheNumberOfUnlockedSlots()
+    {
+        Player host = Player(1);
+        Match settings = Settings();
+        settings.SlotStatuses = Enumerable.Repeat(SlotStatus.Open, 16).ToArray();
+        for (int index = 8; index < settings.SlotStatuses.Length; index++)
+        {
+            settings.SlotStatuses[index] = SlotStatus.Locked;
+        }
+
+        await SendAsync(host, new PacketCreateMatch { Match = settings });
+        IRoom room = _rooms.GetPlayerRoom(host)!;
+        Assert.That(room.Slots[15].Status, Is.EqualTo(SlotStatus.Locked));
+
+        // Unlocking an automatically locked slot adds exactly one usable slot, wherever it sits.
+        await SendAsync(host, new PacketMatchLock { SlotId = 15 });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(room.Slots[15].Status, Is.EqualTo(SlotStatus.Open));
+            Assert.That(room.Slots.Skip(8).Take(7).All(slot => slot.Status == SlotStatus.Locked), Is.True);
+            Assert.That(Packets(host).OfType<ServerPackets.PacketUpdateMatch>().Last().Match.SlotStatuses[15], Is.EqualTo(SlotStatus.Open));
+        });
+        _repository.Verify(
+            repository => repository.UpdateRoomSettings(room.RoomId, It.Is<MultiplayerRoomSettings>(settings => settings.MaxParticipants == 9)),
+            Times.Once);
+
+        // Locking an empty slot removes one usable slot again.
+        await SendAsync(host, new PacketMatchLock { SlotId = 2 });
+        _repository.Verify(
+            repository => repository.UpdateRoomSettings(room.RoomId, It.Is<MultiplayerRoomSettings>(settings => settings.MaxParticipants == 8)),
+            Times.Once);
+
+        Player guest = Player(2);
+        await SendAsync(guest, new PacketJoinMatch { MatchId = room.MatchId });
+        Assert.That(_rooms.GetPlayerRoom(guest), Is.SameAs(room));
+        await SendAsync(guest, new PacketMatchChangeSlot { SlotId = 15 });
+        Assert.That(room.Slots[15].Player, Is.SameAs(guest));
+    }
+
+    [Test]
     public async Task LockedSlotsCannotBeJoinedAndOccupiedLocksImmediatelyKick()
     {
         Player host = Player(1);

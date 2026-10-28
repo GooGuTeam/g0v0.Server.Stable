@@ -567,16 +567,34 @@ public sealed partial class Room
             return "Cannot shrink the room across occupied slots.";
         }
 
-        using IServiceScope scope = _scopes.CreateScope();
-        await scope.ServiceProvider.GetRequiredService<IRoomRepository>().UpdateRoomSettings(RoomId, ToRoomSettings(_match, size)).ConfigureAwait(false);
-        foreach (RoomSlot slot in _slots.Skip(Math.Min(size, _size)).Take(Math.Abs(size - _size)))
+        for (int index = 0; index < _slots.Length; index++)
         {
-            slot.Status = size > _size ? SlotStatus.Open : SlotStatus.Locked;
+            if (_slots[index].Player is null)
+            {
+                _slots[index].Status = index < size ? SlotStatus.Open : SlotStatus.Locked;
+            }
         }
 
-        _size = size;
+        await SetSizeAsync(size).ConfigureAwait(false);
         BroadcastState();
         return FormattableString.Invariant($"Room size changed to {size}.");
+    }
+
+    private async Task SetSizeAsync(int size)
+    {
+        using IServiceScope scope = _scopes.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<IRoomRepository>().UpdateRoomSettings(RoomId, ToRoomSettings(_match, size)).ConfigureAwait(false);
+        _size = size;
+    }
+
+    // MaxParticipants mirrors the usable slots, so every lock toggle rewrites it instead of widening an index bound.
+    private async Task SyncCapacityAsync()
+    {
+        int size = Math.Clamp(_slots.Count(slot => slot.Status != SlotStatus.Locked), 2, 16);
+        if (size != _size)
+        {
+            await SetSizeAsync(size).ConfigureAwait(false);
+        }
     }
 
     private async Task<string> SetTeamModeAsync(string[] args)
@@ -814,7 +832,7 @@ public sealed partial class Room
 
         if (string.Equals(command, "move", StringComparison.Ordinal))
         {
-            if (!int.TryParse(args[^1], NumberStyles.None, CultureInfo.InvariantCulture, out int index) || index < 1 || index > _size || _slots[index - 1].Status != SlotStatus.Open)
+            if (!int.TryParse(args[^1], NumberStyles.None, CultureInfo.InvariantCulture, out int index) || !ValidSlot(index - 1) || _slots[index - 1].Status != SlotStatus.Open)
             {
                 return "The destination must be an open slot within the room size.";
             }
