@@ -2,6 +2,7 @@
 
 using System.Net;
 using System.Text;
+using g0v0.Server.Common.ClientIp;
 using g0v0.Server.Common.Configuration;
 using g0v0.Server.Common.Database.Models;
 using g0v0.Server.Common.Database.Repository;
@@ -248,6 +249,9 @@ public class LoginRouteHandlerTests
         context.Response.Body = new MemoryStream();
         ChatServer chats = new(NullLogger<ChatServer>.Instance, _services.GetRequiredService<IServiceScopeFactory>(), _players);
         StableWebAuthenticator authenticator = new(_users.Object, _logins.Object);
+        ClientIpResolver clientIp = new(
+            new TrustedProxyRangeStore(new VerificationConfig(), NullLogger<TrustedProxyRangeStore>.Instance),
+            NullLogger<ClientIpResolver>.Instance);
         LoginRouteHandler handler = new(
             authenticator,
             _users.Object,
@@ -257,6 +261,7 @@ public class LoginRouteHandlerTests
             chats,
             _configs,
             _geoip.Object,
+            clientIp,
             TimeProvider.System,
             NullLogger<LoginRouteHandler>.Instance);
         IResult result = await handler.HandleAsync(context);

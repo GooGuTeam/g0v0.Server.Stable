@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using g0v0.Server.Common.Beatmaps;
 using g0v0.Server.Common.Caching;
+using g0v0.Server.Common.ClientIp;
 using g0v0.Server.Common.Configuration;
 using g0v0.Server.Common.Database.Models;
 using g0v0.Server.Common.Database.Repository;
@@ -18,6 +19,7 @@ using g0v0.Server.Stable.Routes;
 using g0v0.Server.Stable.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using osu.Game.Beatmaps;
 using osu.Game.IO.Legacy;
@@ -331,7 +333,7 @@ public partial class LegacyWebRouteHandlerTests
         DefaultHttpContext context = Context();
         context.Connection.RemoteIpAddress = IPAddress.Loopback;
         context.Request.RouteValues["map_set_id"] = id;
-        await ExecuteAsync(new BeatmapDownloadRouteHandler(new BeatmapDownloadService(_configs, _geoIp.Object)), context);
+        await ExecuteAsync(CreateDownloadHandler(), context);
         Assert.That(context.Response.StatusCode, Is.EqualTo(302));
         Assert.That(context.Response.Headers.Location.ToString(), Is.EqualTo(expected));
     }
@@ -341,7 +343,7 @@ public partial class LegacyWebRouteHandlerTests
     {
         DefaultHttpContext context = Context();
         context.Request.RouteValues["map_set_id"] = "42?next=https://example.test";
-        await ExecuteAsync(new BeatmapDownloadRouteHandler(new BeatmapDownloadService(_configs, _geoIp.Object)), context);
+        await ExecuteAsync(CreateDownloadHandler(), context);
         Assert.That(context.Response.StatusCode, Is.EqualTo(400));
         Assert.That(context.Response.Headers.Location.ToString(), Is.Empty);
     }
@@ -420,6 +422,13 @@ public partial class LegacyWebRouteHandlerTests
 
     private ReplayService CreateReplayService()
         => new(_scores.Object, _storage.Object, _statistics.Object, _replayViewLocks.Object);
+
+    private BeatmapDownloadRouteHandler CreateDownloadHandler()
+        => new(
+            new BeatmapDownloadService(_configs, _geoIp.Object),
+            new ClientIpResolver(
+                new TrustedProxyRangeStore(new VerificationConfig(), NullLogger<TrustedProxyRangeStore>.Instance),
+                NullLogger<ClientIpResolver>.Instance));
 
     private void ConfigureReplay(byte[] replay)
     {

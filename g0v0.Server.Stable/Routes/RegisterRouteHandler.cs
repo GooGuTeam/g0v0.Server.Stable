@@ -1,6 +1,7 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
 using System.Globalization;
+using g0v0.Server.Common.ClientIp;
 using g0v0.Server.Common.Configuration;
 using g0v0.Server.Common.Database.Models;
 using g0v0.Server.Common.Database.Repository;
@@ -42,12 +43,14 @@ namespace g0v0.Server.Stable.Routes;
 /// <param name="users">User persistence.</param>
 /// <param name="configs">The shared configuration manager.</param>
 /// <param name="geoip">Local country lookup for the new account.</param>
+/// <param name="clientIp">Resolves the real client address behind the reverse proxy.</param>
 /// <param name="clock">The current UTC time.</param>
 /// <param name="logger">The logger.</param>
 public sealed class RegisterRouteHandler(
     IUserRepository users,
     ConfigManager configs,
     IGeoIPService geoip,
+    IClientIpResolver clientIp,
     TimeProvider clock,
     ILogger<RegisterRouteHandler> logger) : IRouteHandler
 {
@@ -137,19 +140,9 @@ public sealed class RegisterRouteHandler(
             statusCode: statusCode);
     }
 
-    private static string ResolveIp(HttpContext context)
-    {
-        return context.Connection.RemoteIpAddress switch
-        {
-            null => "127.0.0.1",
-            { IsIPv4MappedToIPv6: true } address => address.MapToIPv4().ToString(),
-            var address => address.ToString(),
-        };
-    }
-
     private async Task<IResult?> CreateAccountAsync(HttpContext context, string username, string email, string password)
     {
-        string ip = ResolveIp(context);
+        string ip = clientIp.Resolve(context);
         GeoIPLookupResult location = geoip.Lookup(ip);
         DateTimeOffset now = clock.GetUtcNow();
 

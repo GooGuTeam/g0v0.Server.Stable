@@ -2,6 +2,7 @@
 
 using System.Net;
 using System.Text;
+using g0v0.Server.Common.ClientIp;
 using g0v0.Server.Common.Configuration;
 using g0v0.Server.Common.Database.Models;
 using g0v0.Server.Common.Database.Repository;
@@ -249,7 +250,15 @@ public class RegisterRouteHandlerTests
     }
 
     private RegisterRouteHandler CreateHandler()
-        => new(_users.Object, _configs, _geoip.Object, TimeProvider.System, NullLogger<RegisterRouteHandler>.Instance);
+        => new(
+            _users.Object,
+            _configs,
+            _geoip.Object,
+            new ClientIpResolver(
+                new TrustedProxyRangeStore(new VerificationConfig(), NullLogger<TrustedProxyRangeStore>.Instance),
+                NullLogger<ClientIpResolver>.Instance),
+            TimeProvider.System,
+            NullLogger<RegisterRouteHandler>.Instance);
 
     private async Task<DefaultHttpContext> PostFormAsync(
         string username = Username,

@@ -67,6 +67,7 @@ public static class Program
         }
 
         builder.Services.AddGeoIP();
+        builder.Services.AddClientIp();
         builder.Services.AddHostedService<SessionCleanupService>();
         builder.Services.AddRedis(ServerIdentify.Stable);
         builder.Services.AddCache();
@@ -145,7 +146,9 @@ public static class Program
     /// </remarks>
     public static WebApplication ConfigureApp(WebApplication app)
     {
-        app.UseForwardedHeaders();
+        // Deliberately no UseForwardedHeaders: it overwrites Connection.RemoteIpAddress, which the
+        // client IP resolver needs to verify that the forwarding headers came from a trusted proxy.
+        // ClientIpResolver reads X-Forwarded-For/X-Real-IP itself (config/verification.json).
         app.UseHttpsRedirection();
 
         app.MapGet("/healthz", () => Results.Ok(new { Service = "g0v0.Server.Stable", Status = "ok" }));

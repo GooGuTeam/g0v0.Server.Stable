@@ -1,6 +1,7 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
 using System.Text;
+using g0v0.Server.Common.ClientIp;
 using g0v0.Server.Common.Configuration;
 using g0v0.Server.Common.Database.Models;
 using g0v0.Server.Common.Database.Repository;
@@ -58,6 +59,7 @@ namespace g0v0.Server.Stable.Routes;
 /// <param name="chats">The chat server providing the login channel directory.</param>
 /// <param name="configs">The shared configuration manager.</param>
 /// <param name="geoip">Local country and ASN lookup.</param>
+/// <param name="clientIp">Resolves the real client address behind the reverse proxy.</param>
 /// <param name="clock">The current UTC time.</param>
 /// <param name="logger">The logger.</param>
 public class LoginRouteHandler(
@@ -69,6 +71,7 @@ public class LoginRouteHandler(
     IChatServer chats,
     ConfigManager configs,
     IGeoIPService geoip,
+    IClientIpResolver clientIp,
     TimeProvider clock,
     ILogger<LoginRouteHandler> logger) : IRouteHandler
 {
@@ -106,11 +109,7 @@ public class LoginRouteHandler(
 
         CancellationToken cancellation = context.RequestAborted;
         DateTimeOffset now = clock.GetUtcNow();
-        string ip = context.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "127.0.0.1";
-        if (context.Connection.RemoteIpAddress is { IsIPv4MappedToIPv6: false } address)
-        {
-            ip = address.ToString();
-        }
+        string ip = clientIp.Resolve(context);
 
         // The login form and the web endpoints share one credential check, so a password change
         // cannot leave one of them behind. The detailed result is needed here to tell a wrong

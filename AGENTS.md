@@ -43,8 +43,7 @@ CI has three jobs: `build-warnaserror` (format verification and an analyzer buil
 - `general.json` — database selection/credentials, Redis, fetcher credentials, and public URLs. `UseLegacyDatabase: true` selects the MySQL v1 schema; `false` selects PostgreSQL v2. `WebUrl` derives from `FrontendUrl` (falling back to `ServerUrl`) and supplies verification/profile/chart links.
 - `game.json` — gameplay feature flags, including RX/AP mode mapping used for submissions and leaderboards.
 - `storage.json` — replay storage (`Local`, `S3`, or `R2`), using Common's `StorageConfiguration`.
-- `verification.json` — login device verification. `EnableSessionVerification` and `DeviceTrustDurationDays` control whether a Stable session may enter the player registry and how long its device remains trusted.
-- Optional `geoip.json` — GeoIP database location and refresh settings. `AddGeoIP()` uses defaults when it is absent and registers both `IGeoIPService` and `TimeProvider`.
+- `verification.json` — login device verification and client IP resolution. `EnableSessionVerification` and `DeviceTrustDurationDays` control whether a Stable session may enter the player registry and how long its device remains trusted. `TrustedProxies` and `TrustedProxySources` recover the real client IP behind the reverse proxy and CDN: absent means loopback and private ranges only, which covers the local nginx but not a public CDN. The production CDN is Bunny, so deployment config should list `https://api.bunny.net/system/edgeserverlist` and `https://api.bunny.net/system/edgeserverlist/ipv6` in `TrustedProxySources`; otherwise every request is attributed to a Bunny edge address.
 - Optional `chat.json` — `ChatConfig`; Stable uses `MessageLengthLimit` and falls back to defaults when the file is absent.
 - Optional `registration.json` — `RegistrationConfig`; `AllowInGameRegistration` and `DisallowedUsernames`. Absent means in-game registration is allowed and only the lazer API's `banned_name` defaults are refused.
 
@@ -68,7 +67,7 @@ Entrypoint: `g0v0.Server.Stable/Program.cs`. `ConfigureServices` registers `IPat
 
 `IPlayerManager`, `IRoomManager`, `IChatServer`, `RulesetManager`, `StableScoreSubmissionTracker`, and the hosted `ScoreProcessingQueue` are singletons. Route handlers, `StableWebAuthenticator`, `IPacketFacade`, and the score processor are scoped. `PacketFacade` supplies the player/room/chat managers, rulesets, and `IServiceScopeFactory` to packet readers and handlers. Singleton services create scopes for repository access; keep request-scoped database services out of stored session state.
 
-`ConfigureApp` enables forwarded headers and HTTPS redirection, then maps:
+`ConfigureApp` applies HTTPS redirection, then maps. It deliberately does **not** call `UseForwardedHeaders`: that middleware overwrites `Connection.RemoteIpAddress`, which `IClientIpResolver` needs to decide whether forwarding headers came from a trusted proxy.
 
 - `GET /healthz` — service health response.
 - `POST /users` — `RegisterRouteHandler`, in-game account creation.
@@ -78,6 +77,12 @@ Entrypoint: `g0v0.Server.Stable/Program.cs`. `ConfigureServices` registers `IPat
 - `POST /web/osu-getbeatmapinfo.php` — `BeatmapInfoRouteHandler`.
 - `GET /web/osu-osz2-getscores.php` — `LeaderboardRouteHandler`.
 - `GET /web/osu-getfriends.php` — `FriendsRouteHandler`.
+
+### Client IP
+
+- `IClientIpResolver` is registered by Common's `AddClientIp()` and injected into the handlers that persist or geolocate an address (`LoginRouteHandler`, `RegisterRouteHandler`, `BeatmapDownloadRouteHandler`). Do not read `Connection.RemoteIpAddress` directly: it is the immediate peer (nginx), not the client.
+- Forwarding headers are honoured only when the peer is inside `TrustedProxies`; `X-Forwarded-For` is walked from right to left and the first untrusted hop wins. `CF-Connecting-IP` is used only when the last hop is a Cloudflare edge. Headers from an untrusted peer are ignored, so a direct connection cannot forge its address.
+- `TrustedProxySources` is refreshed in the background and keeps its last good snapshot; catch-all ranges are rejected. The deployment sits behind Bunny (`cho.g0v0.top` is a `b-cdn.net` alias), so production needs both Bunny edge-list URLs or every request is attributed to the edge.
 
 ### Registration
 
@@ -91,7 +96,7 @@ Entrypoint: `g0v0.Server.Stable/Program.cs`. `ConfigureServices` registers `IPat
 
 - `LoginPacket.Parse` reads the three-line UTF-8 login body (username, password MD5, pipe-delimited client/device fields). Login and polling require the exact `User-Agent: osu!`; other agents receive HTTP 422.
 - `StableWebAuthenticator` is shared by login and web handlers. It validates a 32-character hexadecimal password MD5, lowercases it, and verifies it against the stored bcrypt hash through `ILoginRepository`. Bots are rejected as disabled accounts. Preserve the detailed failure result used to choose login failure tokens.
-- Login records the GeoIP-enriched audit and stable device/session state through `ILoginRepository`. An unverified device receives `cho-token: verification-required`, a `RequiresVerification` user-ID packet without a server notification; the client handles the verification prompt, and the session never enters `IPlayerManager`. Tournament clients require supporter status. A non-tournament session that polled within the last ten seconds blocks another regular login.
+- Login records the GeoIP-enriched audit and stable device/session state through `ILoginRepository`. An unverified login receives `cho-token: verification-required`, a `RequiresVerification` user-ID packet without a server notification; the client handles the verification prompt, and the session never enters `IPlayerManager`. A pending session keeps only the device hash: the trusted device is created by the lazer API's stable-verification endpoint once the account owner approves the client, so never insert one from an unverified login. Tournament clients require supporter status. A non-tournament session that polled within the last ten seconds blocks another regular login.
 - Successful login returns `application/octet-stream` and a `cho-token` header. The initial packets include protocol version 19, user ID, privileges, friends, silence state, the user's presence/stats, and the channel directory. Always append `PacketChannelInfoEnd`, even for an empty directory: the client waits in "Receiving data..." without it. Queued presence events follow the initial response packets.
 - Polling reads the `osu-token` header and resolves the exact session by token. Missing/unknown sessions get a notification and immediate `PacketRestart` in a binary response. Packets are handled in wire order, handler responses join the player's outgoing queue, and the queue is drained into the response. An empty poll still drains pending events.
 - Restricted sessions may send only packets registered with `allowRestrict: true`. Exceptions from an individual handler are logged and skipped so the remaining poll can complete; `OperationCanceledException` propagates. The dispatcher rechecks session identity between packets so a logged-out or replaced session cannot continue handling the batch.
@@ -160,4 +165,5 @@ NUnit 4, Moq, and `Microsoft.NET.Test.Sdk` 17. Tests use in-process handlers/man
 - Read the actual mappings in `Program.ConfigureApp` before changing request dispatch. Currently `/` maps directly to login and `/packet` to polling; XML comments describing token-based polling on `/` do not add such routing.
 - Several packet/route XML comments contain historical packet-number or response-shape descriptions. Use `[OsuPacket]`, serializer code, and byte fixtures as the source of truth for IDs and framing.
 - Keep binary login/poll failures in the form the client expects. Replacing packet notifications with generic HTTP errors makes the client treat recoverable conditions as a lost connection.
+- Never re-add `UseForwardedHeaders()`. If middleware rewrites `RemoteIpAddress`, `ClientIpResolver` can no longer tell a trusted proxy from a direct client and the recorded address becomes spoofable.
 - Config, local storage, GeoIP databases, and generated artifacts are ignored runtime data. Use throwaway files for tests and keep deployment credentials out of tracked documentation.
