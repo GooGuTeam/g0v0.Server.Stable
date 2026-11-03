@@ -35,7 +35,7 @@ WORKDIR /app
 EXPOSE 8080
 
 # Runtime data lives in mounted volumes, never baked into the image.
-#   config/   - JSON configuration files (general.json, game.json, storage.json)
+#   config/   - JSON configuration files (general.json, game.json, stable.json, storage.json, verification.json)
 #   rulesets/ - custom osu! ruleset DLLs
 #   storage/  - local file storage (replays, screenshots etc.)
 VOLUME ["/app/config", "/app/rulesets", "/app/storage"]

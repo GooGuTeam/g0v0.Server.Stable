@@ -54,6 +54,20 @@ public static class Program
         GeneralConfig general = configs.Get<GeneralConfig>();
         builder.Services.AddSingleton(configs);
 
+        StableConfig stable = configs.TryGet<StableConfig>() ?? new StableConfig();
+        if (stable.Sentry.Enabled)
+        {
+            builder.WebHost.UseSentry(options =>
+            {
+                options.Dsn = stable.Sentry.Dsn;
+                options.Environment = string.IsNullOrWhiteSpace(stable.Sentry.Environment)
+                    ? builder.Environment.EnvironmentName
+                    : stable.Sentry.Environment;
+                options.TracesSampleRate = stable.Sentry.TracesSampleRate;
+                options.SendDefaultPii = stable.Sentry.SendDefaultPii;
+            });
+        }
+
         builder.Services.AddRepositories(general.UseLegacyDatabase);
         if (general.UseLegacyDatabase)
         {

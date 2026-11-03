@@ -1,6 +1,7 @@
 // Copyright (c) GooGuTeam. License under MIT License. See LICENSE in the project root for license information.
 
 using g0v0.Server.Common.Configuration.Attributes;
+using SentryOptions = g0v0.Server.Common.Configuration.SentryOptions;
 
 namespace g0v0.Server.Stable;
 
@@ -19,4 +20,7 @@ public sealed class StableConfig
     /// <summary>Gets or sets the maximum number of active tournament rooms created by one account.</summary>
     [Reloadable]
     public int MaxActiveTournamentRooms { get; set; } = 4;
+
+    /// <summary>Gets or sets the Sentry error-monitoring settings.</summary>
+    public SentryOptions Sentry { get; set; } = new();
 }
