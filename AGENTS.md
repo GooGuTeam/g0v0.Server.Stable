@@ -71,6 +71,7 @@ Entrypoint: `g0v0.Server.Stable/Program.cs`. `ConfigureServices` registers `IPat
 `ConfigureApp` applies HTTPS redirection, then maps. It deliberately does **not** call `UseForwardedHeaders`: that middleware overwrites `Connection.RemoteIpAddress`, which `IClientIpResolver` needs to decide whether forwarding headers came from a trusted proxy.
 
 - `GET /healthz` — service health response.
+- `GET /health` — `HealthRouteHandler`, anonymous live counters as JSON: `identify` (`stable`), `players_online` (distinct accounts), `active_sessions` (all registered sessions), `tournament_sessions` (subset that are tournament clients), `multiplayer_rooms` (live rooms) and `pending_scores` (unprocessed `stable` scores).
 - `POST /users` — `RegisterRouteHandler`, in-game account creation.
 - `POST /` — `LoginRouteHandler`, the unframed login handshake.
 - `POST /packet` — `PacketRouteHandler`, authenticated binary packet polling.

@@ -146,6 +146,7 @@ public static class Program
         builder.Services.AddScoped<CallPeppyRouteHandler>();
         builder.Services.AddScoped<SearchRouteHandler>();
         builder.Services.AddScoped<SearchSetRouteHandler>();
+        builder.Services.AddScoped<HealthRouteHandler>();
     }
 
     /// <summary>
@@ -164,8 +165,7 @@ public static class Program
         // client IP resolver needs to verify that the forwarding headers came from a trusted proxy.
         // ClientIpResolver reads X-Forwarded-For/X-Real-IP itself (config/verification.json).
         app.UseHttpsRedirection();
-
-        app.MapGet("/healthz", () => Results.Ok(new { Service = "g0v0.Server.Stable", Status = "ok" }));
+        app.MapGet("/health", (HttpContext context, HealthRouteHandler handler) => handler.HandleAsync(context));
         app.MapPost("/users", (HttpContext context, RegisterRouteHandler handler) => handler.HandleAsync(context));
         app.MapPost("/login", (HttpContext context, LoginRouteHandler handler) => handler.HandleAsync(context));
         app.MapPost("/packet", (HttpContext context, PacketRouteHandler handler) => handler.HandleAsync(context));
